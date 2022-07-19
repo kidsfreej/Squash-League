@@ -12,20 +12,6 @@ class Prop:
         self.error = False
     def __repr__(self):
         return repr(self.value)
-class Date:
-    def __init__(self,name:str,value:str):
-        self.name = name
-        self.error=  False
-        split = value.split("/")
-        try:
-            self.day = int(split[1])
-            self.month =int(split[0])
-            self.year = int(split[2])
-        except:
-            self.error=True
-            self.value = value
-    def __repr__(self):
-        return f"{self.month}/{self.day}/{self.year}"
 class Dates:
     def __init__(self,name:str,value:str):
         self.name =name
@@ -34,7 +20,7 @@ class Dates:
         self.dates = []
         try:
             for sp in split:
-                self.dates.append(Date(name,sp.strip()))
+                self.dates.append(Dates(name,sp.strip()))
         except:
             self.error=True
             self.value = value
@@ -59,7 +45,7 @@ class Team:
         self.noPlayDates = Dates("No Play Dates",noPlayDates)
         self.noMatchDays = Dates("No Match Days",noMatchDays)
         self.homeMatchPCT = Number("Home Match %",homeMatchPCT)
-        self.startDate = Date("Start Date",startDate)
+        self.startDate = Dates("Start Date",startDate)
         self.properties = [self.fullName,self.shortName,self.division,self.practiceDays,self.homeFacility,self.alternateFacility,self.noPlayDates,self.noMatchDays,self.homeMatchPCT,self.startDate]
         errors = []
         for prop in self.properties:
