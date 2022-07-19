@@ -6,15 +6,38 @@ properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Hom
               "Alternate Facility", "No Play Dates", "No Match Days", "Home Match %", "Start Date"]
 # test
 class Prop:
-    def __init__(self,name,value,typ="normal"):
+    def __init__(self,name:str,value):
         self.name = name
         self.value = value
-        self.typ = typ
+        self.error = False
     def __repr__(self):
-        if self.typ=="normal":
-            return html.escape(repr(self.value))
-        else:
-            raise NotImplemented("erro")
+        return repr(self.value)
+class Date:
+    def __int__(self,name:str,value:str):
+        self.name = name
+        self.error=  False
+        spled = value.split("/")
+        try:
+            self.day = int(spled[1])
+            self.month =int(spled[0])
+            self.year = int(spled[2])
+        except:
+            self.error=True
+    def __repr__(self):
+        return f"{self.month}/{self.day}/{self.year}"
+class Dates:
+    def __int__(self,name:str,value:str):
+        self.name =name
+        self.error = False
+        split = value.split(" ")
+        try:
+            for sp
+            self.day = int(spled[1])
+            self.month =int(spled[0])
+            self.year = int(spled[2])
+        except:
+            self.error=True
+
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):

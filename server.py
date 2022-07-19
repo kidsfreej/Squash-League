@@ -14,7 +14,9 @@ def add_new_team():
     teams.append(t)
     return render_template("submitnewteam.html",data=t.properties)
 @app.route("/newteam")
-def index():
+def newteam_page():
     return send_from_directory("./websites","newteam.html")
-
+@app.route("/")
+def index_page():
+    return send_from_directory("./websites","index.html")
 app.run()
