@@ -29,11 +29,11 @@ class Team:
         self.homeMatchPCT = Prop("Home Match %",homeMatchPCT)
         self.startDate = Prop("Start Date",startDate)
         self.properties = [self.fullName,self.shortName,self.division,self.practiceDays,self.homeFacility,self.alternateFacility,self.noPlayDates,self.noMatchDays,self.homeMatchPCT,self.startDate]
-    def __str__(self):
-        s = ""
-        for prop in self.properties:
-            s+=f"{prop.name}: {prop}<br>"
-        return s
+    # def __str__(self):
+    #     s = ""
+    #     for prop in self.properties:
+    #         s+=f"{prop.name}: {prop}<br>"
+    #     return s
     def summary(self):
         print(self.shortName, self.division)
 

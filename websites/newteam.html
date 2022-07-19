@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squash Thing</title>
+    <style>
+        label{
+            display: inline-block;
+            float: left;
+            clear: left;
+            width: 500px;
+            text-align: left;
+        }
+        input {
+          display: inline-block;
+          float: left;
+        }
+    </style>
+</head>
+<body>
+
+<form method="post" action="/submitnewteam">
+    <span style="font-size:30px">
+        <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name"><br>
+    <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name"><br>
+    <label>Division</label>  <input type="text" name="division" placeholder="Division"><br>
+    <label>Practice Days (m/d/y, m/d/y, m/d/y...)</label>  <input type="text" name="practiceDays" placeholder="Practice Days"><br>
+    <label>Home Facility</label>  <input type="text" name="homeFacility" placeholder="Home Facility"><br>
+    <label>Alternate Facility</label>  <input type="text" name="alternativeFacility" placeholder="Alternate Facility"><br>
+   <label> No Play Dates (m/d/y, m/d/y, m/d/y...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates"><br>
+   <label> No Match Days (m/d/y, m/d/y, m/d/y...) </label> <input type="text" name="noMatchDays" placeholder="No Match Days"><br>
+   <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %"><br>
+   <label> Start Date (m/d/y) </label> <input type="text" name="startDate" placeholder="Start Date"><br>
+
+    <input type="submit" value="Submit">
+        </span>
+</form>
+</body>
+</html>
