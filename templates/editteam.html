@@ -22,6 +22,7 @@
 <h1>Edit {{team.fullName}}</h1>
 <form method="post" action="/submitedit">
     <span style="font-size:30px">
+      <input type="hidden" name="teamname" value="{{team.fullName}}">
         <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name" value="{{team.fullName}}" required><br>
     <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" value="{{team.shortName}}" required><br>
     <label>Division</label>  <input type="text" name="division" placeholder="Division" value="{{team.division}}" required><br>

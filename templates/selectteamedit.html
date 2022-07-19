@@ -8,13 +8,14 @@
   <a href="/">Home</a>
   <h1>EDIT TEAM</h1>
   <h2>WARNING: EDITING WILL NOT CHANGE THE SCHEDULE. IF YOU WANT TO MAKE A CHANGE ANY DATE USE THE OTHER TOOL FOR THAT.</h2>
-    {% for team in teams %}
-  <span style="font-size:30px">{{team.fullName}}</span><br>
+    {%for name in teams %}
+    {% set team = teams[name] %}
+  <span style="font-size:30px">{{name}}</span><br>
         {% for prop in team.properties %}
   <span style="font-size:15px"> {{prop.name}}: {{prop}}</span><br>
         {%endfor%}
         <br>
-  <a href="/edit?team={{team.fullName}}">Edit {{team.fullName}}</a>
+  <a href="/edit?team={{team.fullName}}">Edit {{name}}</a>
     {%endfor%}
 
 
