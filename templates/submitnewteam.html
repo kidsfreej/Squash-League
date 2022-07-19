@@ -10,7 +10,7 @@
 <h2>Review the team:</h2>
 <span style="font-size:30px">
 {% for dat in data %}
-    {{dat.name}}: {{dat.value}} <br>
+    {{dat.name}}: {{dat.__repr__()}} <br>
 {% endfor %}
 </span>
 <span style="font-size:20px">

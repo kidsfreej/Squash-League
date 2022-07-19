@@ -11,7 +11,21 @@ class Prop:
         self.value = value.strip()
         self.error = False
     def __repr__(self):
-        return repr(self.value)
+        return str(self.value)
+class Date:
+    def __init__(self,name:str,value:str):
+        self.name = name
+        self.error=  False
+        spled = value.split("/")
+        try:
+            self.day = int(spled[1])
+            self.month =int(spled[0])
+            self.year = int(spled[2])
+        except:
+            self.error=True
+            self.value = value
+    def __repr__(self):
+        return f"{self.month}/{self.day}/{self.year}"
 class Dates:
     def __init__(self,name:str,value:str):
         self.name =name
@@ -20,10 +34,16 @@ class Dates:
         self.dates = []
         try:
             for sp in split:
-                self.dates.append(Dates(name,sp.strip()))
+                self.dates.append(Date(name,sp.strip()))
+                if self.dates[-1].error:
+                    self.error=True
+                    self.value = value
+                    break
         except:
             self.error=True
             self.value = value
+    def __repr__(self):
+        return ', '.join(map(str,self.dates))
 class Number:
     def __init__(self,name:str,value:str):
         self.error = False
@@ -33,6 +53,8 @@ class Number:
         except:
             self.error =True
             self.value = value
+    def __repr__(self):
+        return str(self.value)
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
@@ -60,6 +82,7 @@ class Team:
                     m+=f"Make sre you enter common seperated date(s). You entered {k}"
                 else:
                     raise NotImplementedError("oopsies")
+                print(m)
                 errors.append(m)
         self.errors = errors
     # def __str__(self):
