@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squash League - Edit Team</title>
+      <style>
+        label{
+            display: inline-block;
+            float: left;
+            clear: left;
+            width: 500px;
+            text-align: left;
+        }
+        input {
+          display: inline-block;
+          float: left;
+        }
+    </style>
+</head>
+<body>
+<a href="/">Home</a>
+<h1>Edit {{team.fullName}}</h1>
+<form method="post" action="/submitedit">
+    <span style="font-size:30px">
+      <input type="hidden" name="teamname" value="{{team.fullName}}">
+        <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name" value="{{team.fullName}}" required><br>
+    <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" value="{{team.shortName}}" required><br>
+    <label>Division</label>  <input type="text" name="division" placeholder="Division" value="{{team.division}}" required><br>
+    <label>Practice Days (mm/dd/yy, mm/dd/yy, mm/dd/yy...)</label>  <input type="text" name="practiceDays"  value="{{team.practiceDays}}" placeholder="Practice Days"><br>
+    <label>Home Facility</label>  <input type="text" name="homeFacility" placeholder="Home Facility" value="{{team.homeFacility}}"><br>
+    <label>Alternate Facility</label>  <input type="text" name="alternativeFacility" placeholder="Alternate Facility" value="{{team.alternateFacility}}"><br>
+   <label> No Play Dates (mm/dd/yy, mm/dd/yy, mm/dd/yy...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates" value="{{team.noPlayDates}}"><br>
+   <label> No Match Days (mm/dd/yy, mm/dd/yy, mm/dd/yy...) </label> <input type="text" name="noMatchDays" placeholder="No Match Days" value="{{team.noMatchDays}}"><br>
+   <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %" value="{{team.homeMatchPCT}}" required><br>
+   <label> Start Date (mm/dd/yy) </label> <input type="text" name="startDate" placeholder="Start Date" required value="{{team.startDate}}"><br>
+    <br>
+    <br>
+    <br>
+    <input type="submit" value="Submit">
+        </span>
+</form>
+</body>
+</html>
