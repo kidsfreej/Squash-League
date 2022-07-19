@@ -82,7 +82,7 @@ class Team:
         self.noPlayDates = Dates("No Play Dates",noPlayDates)
         self.noMatchDays = Dates("No Match Days",noMatchDays)
         self.homeMatchPCT = Number("Home Match %",homeMatchPCT)
-        self.startDate = Dates("Start Date",startDate)
+        self.startDate = Date("Start Date",startDate)
         self.properties = [self.fullName,self.shortName,self.division,self.practiceDays,self.homeFacility,self.alternateFacility,self.noPlayDates,self.noMatchDays,self.homeMatchPCT,self.startDate]
         errors = []
         for prop in self.properties:
