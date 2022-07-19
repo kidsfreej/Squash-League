@@ -33,6 +33,7 @@ class Team:
         s = ""
         for prop in self.properties:
             s+=f"{prop.name}: {prop}<br>"
+        return s
     def summary(self):
         print(self.shortName, self.division)
 
