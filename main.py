@@ -1,24 +1,38 @@
-import PySimpleGUI as sg
-
+import html
 
 # TODO Web page (flask) as input/UI
 # TODO
-
+properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Home Facility",
+              "Alternate Facility", "No Play Dates", "No Match Days", "Home Match %", "Start Date"]
 # test
+class Prop:
+    def __init__(self,name,value,typ="normal"):
+        self.name = name
+        self.value = value
+        self.typ = typ
+    def __repr__(self):
+        if self.typ=="normal":
+            return html.escape(repr(self.value))
+        else:
+            raise NotImplemented("erro")
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
-        self.fullName = fullName
-        self.shortName = shortName
-        self.division = division
-        self.practiceDays = practiceDays
-        self.homeFacility = homeFacility
-        self.alternateFacility = alternateFacility
-        self.noPlayDates = noPlayDates
-        self.noMatchDays = noMatchDays
-        self.homeMatchPCT = homeMatchPCT
-        self.startDate = startDate
-
+        self.fullName = Prop("Full Name",fullName)
+        self.shortName = Prop("Short Name",shortName)
+        self.division = Prop("Division",division)
+        self.practiceDays = Prop("Practice Days", practiceDays)
+        self.homeFacility = Prop("Home Facility",homeFacility)
+        self.alternateFacility = Prop("Alternate Facility",alternateFacility)
+        self.noPlayDates = Prop("No Play Dates",noPlayDates)
+        self.noMatchDays = Prop("No Match Days",noMatchDays)
+        self.homeMatchPCT = Prop("Home Match %",homeMatchPCT)
+        self.startDate = Prop("Start Date",startDate)
+        self.properties = [self.fullName,self.shortName,self.division,self.practiceDays,self.homeFacility,self.alternateFacility,self.noPlayDates,self.noMatchDays,self.homeMatchPCT,self.startDate]
+    def __str__(self):
+        s = ""
+        for prop in self.properties:
+            s+=f"{prop.name}: {prop}<br>"
     def summary(self):
         print(self.shortName, self.division)
 
