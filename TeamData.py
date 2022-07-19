@@ -16,11 +16,11 @@ class Date:
     def __init__(self,name:str,value:str):
         self.name = name
         self.error=  False
-        spled = value.split("/")
+        split = value.split("/")
         try:
-            self.day = int(spled[1])
-            self.month =int(spled[0])
-            self.year = int(spled[2])
+            self.day = int(split[1])
+            self.month =int(split[0])
+            self.year = int(split[2])
         except:
             self.error=True
             self.value = value
