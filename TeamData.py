@@ -12,6 +12,13 @@ class Prop:
         self.error = False
     def __repr__(self):
         return str(self.value)
+    def __eq__(self, other):
+
+        if type(other)==str:
+            return self.value == other
+        if type(other)!=Prop:
+            raise Exception("uh oh")
+        return self.value==other.value
 class Date:
     def __init__(self,name:str,value:str):
         self.name = name
@@ -26,12 +33,17 @@ class Date:
             self.value = value
     def __repr__(self):
         return f"{self.month}/{self.day}/{self.year}"
+    def __eq__(self, other):
+        return self.month == other.month and self.day == other.day and self.year == other.year
 class Dates:
     def __init__(self,name:str,value:str):
         self.name =name
         self.error = False
         split = value.strip().split(",")
         self.dates = []
+        if len(split)==1 and split[0]=="":
+            return
+
         try:
             for sp in split:
                 self.dates.append(Date(name,sp.strip()))
@@ -44,6 +56,7 @@ class Dates:
             self.value = value
     def __repr__(self):
         return ', '.join(map(str,self.dates))
+
 class Number:
     def __init__(self,name:str,value:str):
         self.error = False
@@ -55,6 +68,8 @@ class Number:
             self.value = value
     def __repr__(self):
         return str(self.value)
+    def __eq__(self, other):
+        return self.value == other.value
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
