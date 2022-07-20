@@ -1,5 +1,5 @@
 import html
-import datetime
+
 # TODO Web page (flask) as input/UI
 # TODO
 properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Home Facility",
@@ -73,6 +73,7 @@ class Number:
         return str(self.value)
     def __eq__(self, other):
         return self.value == other.value
+
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
@@ -85,7 +86,7 @@ class Team:
         self.noPlayDates = Dates("No Play Dates",noPlayDates)
         self.noMatchDays = Dates("No Match Days",noMatchDays)
         self.homeMatchPCT = Number("Home Match %",homeMatchPCT)
-        self.startDate = Dates("Start Date",startDate)
+        self.startDate = Date("Start Date",startDate)
         self.properties = [self.fullName,self.shortName,self.division,self.practiceDays,self.homeFacility,self.alternateFacility,self.noPlayDates,self.noMatchDays,self.homeMatchPCT,self.startDate]
         errors = []
         for prop in self.properties:

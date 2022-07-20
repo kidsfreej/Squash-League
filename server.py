@@ -3,7 +3,12 @@ from flask import Flask
 from flask import send_from_directory
 from flask import render_template
 from flask import request
+from database import Database
+
 app = Flask(__name__)
+
+db = Database()
+db.print_all()
 
 
 teams = {}
@@ -16,13 +21,14 @@ def add_new_team():
     if t.fullName.value in teams:
         return render_template("submitnewteam_fail.html",errors=[t.fullName.value+" is already a team!"])
     teams[t.fullName.value] = t
-
+    db.add_team(t)
     return render_template("submitnewteam.html",data=t.properties)
 @app.route("/newteam")
 def newteam_page():
     return send_from_directory("./websites","newteam.html")
 @app.route("/")
 def index_page():
+
     return send_from_directory("./websites","index.html")
 
 @app.route("/edit",methods=["POST","GET"])
@@ -48,6 +54,8 @@ def editor_page():
             return render_template("submitnewteam_fail.html", errors=t.errors)
         teams.pop(request.form["teamname"])
         teams[t.fullName.value] = t
+        db.remove_team(name)
+        db.add_team(t)
         return render_template("submiteditteam.html",data=t.properties)
     return "Ok  this should neve everr happen. "
 @app.route("/delete")
