@@ -1,6 +1,6 @@
 import html
 
-# TODO Web page (flask) as input/UI
+# TODO Have a list of playable dates for each team, based on the no play dates given
 # TODO
 properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Home Facility",
               "Alternate Facility", "No Play Dates", "No Match Days", "Home Match %", "Start Date"]
@@ -70,6 +70,7 @@ class Number:
         return str(self.value)
     def __eq__(self, other):
         return self.value == other.value
+
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):

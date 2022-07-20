@@ -1,39 +1,44 @@
 import sqlite3
 from TeamData import Team
 
-#Set up connection to db
 
-con = sqlite3.connect('data.db')
+class Database:
+    def __init__(self):
+        # Set up connection to db
+        self.con = sqlite3.connect('data.db',check_same_thread=False)
+        self.cur = self.con.cursor()
+        try:
+            self.cur.execute('''CREATE TABLE teams
+                      (FullName text, AbbvName text, Division text, PracticeDays text, HomeFacility text, AlternateFacility text, 
+                      NoPlayDates text, NoMatchDays text, HomeMatchPCT text, StartDate text)''')
+        except:
+            pass
+        self.save()
 
-cur = con.cursor()
+    def save(self):
+        self.con.commit()
+        #self.con.close()
 
-#Clear table from memory
-cur.execute("DROP TABLE teams")
-# Create table
+    def clear_table(self):
+        # Clear table from memory
+        self.cur.execute("DROP TABLE teams")
+        self.save()
+
+    def add_team(self, team):
+        self.cur.execute("INSERT INTO teams VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                         (team.fullName.__repr__(), team.shortName.__repr__(), team.division.__repr__(),
+                          team.practiceDays.__repr__(), team.homeFacility.__repr__(), team.alternateFacility.__repr__(),
+                          team.noPlayDates.__repr__(), team.noMatchDays.__repr__(), team.homeMatchPCT.__repr__(),
+                          team.startDate.__repr__()))
+        # Save (commit) the changes
+        self.save()
+
+    def print_all(self):
+        print("Teams:")
+        for row in self.cur.execute('SELECT * FROM teams'):
+            print(row)
 
 
-team0 = Team("Greenwich", "GHS", "FCIAC","Monday, Wednesday, Friday", "Chelsea Piers", "Chelsea Piers", "12/31", "12/31", "50", "12/1")
-
-#team0.fullName, team0.shortName, team0.division,  team0.practiceDays, team0.homeFacility, team0.alternateFacility, team0.noPlayDates, team0.noMatchDays, team0.homeMatchPCT, team0.startDate
-
-
-cur.execute('''CREATE TABLE teams
-              (FullName text, AbbvName text, Division text, PracticeDays text, HomeFacility text, AlternateFacility text, 
-              NoPlayDates text, NoMatchDays text, HomeMatchPCT text, StartDate text)''')
-
-# Insert a row of data
-cur.execute("INSERT INTO teams VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (team0.fullName.__repr__(), team0.shortName.__repr__(), team0.division.__repr__(),
-             team0.practiceDays.__repr__(), team0.homeFacility.__repr__(), team0.alternateFacility.__repr__(),
-             team0.noPlayDates.__repr__(), team0.noMatchDays.__repr__(), team0.homeMatchPCT.__repr__(), team0.startDate.__repr__()))
-
-# Save (commit) the changes
-con.commit()
-
-# We can also close the connection if we are done with it.
-# Just be sure any changes have been committed or they will be lost.
-
-for row in cur.execute('SELECT * FROM teams'):
-    print(row)
-
-con.close()
+# FullName, AbbvName, Division , PracticeDays , HomeFacility , AlternateFacility ,NoPlayDates , NoMatchDays , HomeMatchPCT , StartDate
+#team0 = Team("Greenwich", "GHS", "FCIAC", "Monday, Wednesday, Friday", "Chelsea Piers", "Chelsea Piers", "12/31",
+            # "12/31", "50", "12/1")
