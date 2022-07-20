@@ -22,7 +22,6 @@ def add_new_team():
         return render_template("submitnewteam_fail.html",errors=[t.fullName.value+" is already a team!"])
     teams[t.fullName.value] = t
     db.add_team(t)
-    db.print_all()
     return render_template("submitnewteam.html",data=t.properties)
 @app.route("/newteam")
 def newteam_page():
@@ -52,8 +51,10 @@ def editor_page():
             return render_template("submitnewteam_fail.html", errors=t.errors)
         teams.pop(request.form["teamname"])
         teams[t.fullName.value] = t
+        db.remove_team(name)
+        db.add_team(t)
         return render_template("submiteditteam.html",data=t.properties)
-    return "Ok  this should neve everr happen. "
+    return "Ok this should never ever happen. "
 
 
 app.run(port=8080)

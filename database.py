@@ -4,7 +4,7 @@ from TeamData import Team
 
 class Database:
     def __init__(self):
-        # Set up connection to db
+        # Set up connection to dbs
         self.con = sqlite3.connect('data.db',check_same_thread=False)
         self.cur = self.con.cursor()
         try:
@@ -31,6 +31,11 @@ class Database:
                           team.noPlayDates.__repr__(), team.noMatchDays.__repr__(), team.homeMatchPCT.__repr__(),
                           team.startDate.__repr__()))
         # Save (commit) the changes
+        self.save()
+
+    def remove_team(self, teamName):
+        delete = """DELETE FROM teams WHERE FullName = ?"""
+        self.cur.execute(delete, (teamName,))
         self.save()
 
     def print_all(self):
