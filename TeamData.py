@@ -1,5 +1,5 @@
 import html
-
+import datetime
 # TODO Web page (flask) as input/UI
 # TODO
 properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Home Facility",
@@ -46,6 +46,9 @@ class Dates:
 
         try:
             for sp in split:
+                ranged = sp.split("-")
+                if len(ranged)>1:
+
                 self.dates.append(Date(name,sp.strip()))
                 if self.dates[-1].error:
                     self.error=True

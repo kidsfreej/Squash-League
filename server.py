@@ -25,8 +25,11 @@ def newteam_page():
 def index_page():
     return send_from_directory("./websites","index.html")
 
-@app.route("/edit")
+@app.route("/edit",methods=["POST","GET"])
 def edit_page():
+    if request.method=="POST":
+        teams.pop(request.form["delete"])
+        return render_template("selectteamedit.html", teams=teams)
     arg = request.args.get("team")
     if arg==None:
         return render_template("selectteamedit.html",teams=teams)
@@ -47,4 +50,12 @@ def editor_page():
         teams[t.fullName.value] = t
         return render_template("submiteditteam.html",data=t.properties)
     return "Ok  this should neve everr happen. "
+@app.route("/delete")
+def delete_page():
+    name = request.args.get("team")
+    if name==None or name not in teams:
+        return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a team</h1>"
+    return render_template("deleteteam.html",name=name)
+
+
 app.run()
