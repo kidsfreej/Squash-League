@@ -5,7 +5,7 @@ from TeamData import Team
 class Database:
     def __init__(self):
         # Set up connection to dbs
-        self.con = sqlite3.connect('data.db',check_same_thread=False)
+        self.con = sqlite3.connect('data.db', check_same_thread=False)
         self.cur = self.con.cursor()
         try:
             self.cur.execute('''CREATE TABLE teams
@@ -17,7 +17,7 @@ class Database:
 
     def save(self):
         self.con.commit()
-        #self.con.close()
+        # self.con.close()
 
     def clear_table(self):
         # Clear table from memory
@@ -43,7 +43,19 @@ class Database:
         for row in self.cur.execute('SELECT * FROM teams'):
             print(row)
 
+    def get_teams(self):
+        teams = {}
+        for row in self.cur.execute('SELECT * FROM teams'):
+            teams[row[0]] = Team(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])
+        return teams
+
 
 # FullName, AbbvName, Division , PracticeDays , HomeFacility , AlternateFacility ,NoPlayDates , NoMatchDays , HomeMatchPCT , StartDate
-#team0 = Team("Greenwich", "GHS", "FCIAC", "Monday, Wednesday, Friday", "Chelsea Piers", "Chelsea Piers", "12/31",
-            # "12/31", "50", "12/1")
+team0 = Team("Greenwich", "GHS", "FCIAC", "Monday, Wednesday, Friday", "Chelsea Piers", "Chelsea Piers", "12/31/22",
+             "12/31/22", "50", "12/1/22")
+
+testDB = Database()
+# testDB.add_team(team0)
+# testDB.remove_team("Greenwich")
+testDB.print_all()
+print(testDB.get_teams())
