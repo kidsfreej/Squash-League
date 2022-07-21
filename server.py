@@ -15,7 +15,8 @@ teams = {}
 
 @app.route("/submitnewteam",methods=["POST"])
 def add_new_team():
-    t = Team(request.form["fullName"],request.form["shortName"],request.form["division"],request.form["practiceDays"],request.form["homeFacility"],request.form["alternativeFacility"],request.form["noPlayDates"],request.form["noMatchDays"],request.form["homeMatchPCT"], request.form["startDate"])
+    print(dict(request.form))
+    t = Team(request.form["fullName"],request.form["shortName"],request.form["division"],Weekdays.parse_weekdays(dict(request.form),"practiceDays"),request.form["homeFacility"],request.form["alternativeFacility"],request.form["noPlayDates"],Weekdays.parse_weekdays(dict(request.form),"noMatchDays"),request.form["homeMatchPCT"], request.form["startDate"])
     if len(t.errors)>0:
         return render_template("submitnewteam_fail.html",errors=t.errors)
     if t.fullName.value in teams:
@@ -41,6 +42,7 @@ def edit_page():
         return render_template("selectteamedit.html",teams=teams)
 
     if arg in teams:
+        print("sunday" in teams[arg].practiceDays.days)
         return render_template("editteam.html",team=teams[arg])
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
 @app.route("/submitedit",methods=["POST"])
