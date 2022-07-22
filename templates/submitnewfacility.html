@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squash League - New Facility`</title>
+</head>
+<body>
+<a href="/">Home</a>
+<h1>SUCCESS!</h1>
+<h2>Review the facility:</h2>
+<span style="font-size:30px">
+{% for dat in data %}
+    {{dat.name}}: {{dat.__repr__()}} <br>
+{% endfor %}
+</span>
+<span style="font-size:20px">
+    You can always edit the facility information on the <a href="/editfacility">edit</a> page
+</span>
+</body>
+</html>

@@ -32,14 +32,15 @@ class Date:
         self.error=  False
         spled = value.split("/")
         try:
-            self.day = int(spled[1])
-            self.month =int(spled[0])
-            self.year = int(spled[2])
+            d = datetime.datetime.strptime(value.strip(), "%m/%d/%y")
+            self.day = d.day
+            self.month = d.month
+            self.year = d.year
         except:
             self.error=True
             self.value = value
     def __repr__(self):
-        return f"{self.month}/{self.day}/{self.year}"
+        return f"{self.month}/{self.day}/{str(self.year)[2:]}"
     def __eq__(self, other):
         return self.month == other.month and self.day == other.day and self.year == other.year
 
@@ -77,7 +78,6 @@ class Dates:
                         self.value = value
                         break
         except Exception as e:
-            print(e)
             self.error=True
             self.value = value
     def __repr__(self):
@@ -126,6 +126,18 @@ class Number:
         return str(self.value)
     def __eq__(self, other):
         return self.value == other.value
+def error_messages(prop):
+    m = f"{prop.name}: "
+    if type(prop) == Number:
+        m += f"Make sure to enter a number (no other symbols). You entered '{prop.value}'."
+    elif type(prop) == Date:
+        m += f"Make sure to enter a date (mm/dd/yy). You entered '{prop.value}'"
+    elif type(prop) == Dates:
+        k = 'and'.join([f"'{d}'" for d in prop.value.split()])
+        m += f"Make sre you enter common seperated date(s). You entered {k}"
+    else:
+        raise NotImplementedError("oopsies")
+    return m
 class Facility:
     def __init__(self,year,fullName,shortName,start,end):
         self.year =Prop("Divison Year", year)
@@ -133,8 +145,14 @@ class Facility:
         self.shortName = Prop("Division Abbreviation",shortName)
         self.start = Date("Division Start Date",start)
         self.end = Date("Division End Date",end)
+        self.properties = [self.year,self.fullName,self.shortName,self.start,self.end]
+        errors = []
+        for prop in self.properties:
+            if prop.error:
 
 
+                errors.append(error_messages(prop))
+        self.errors = errors
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
@@ -152,18 +170,9 @@ class Team:
         errors = []
         for prop in self.properties:
             if prop.error:
-                m = f"{prop.name}: "
-                if type(prop)==Number:
-                    m+=f"Make sure to enter a number (no other symbols). You entered '{prop.value}'."
-                elif type(prop)==Date:
-                    m+=f"Make sure to enter a date (mm/dd/yy). You entered '{prop.value}'"
-                elif type(prop)==Dates:
-                    k = 'and'.join([f"'{d}'" for d in prop.value.split()])
-                    m+=f"Make sre you enter common seperated date(s). You entered {k}"
-                else:
-                    raise NotImplementedError("oopsies")
-                print(m)
-                errors.append(m)
+
+
+                errors.append(error_messages(prop))
         self.errors = errors
     # def __str__(self):
     #     s = ""

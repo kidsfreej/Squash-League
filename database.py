@@ -57,5 +57,5 @@ team0 = Team("Greenwich", "GHS", "FCIAC", "Monday, Wednesday, Friday", "Chelsea 
 testDB = Database()
 # testDB.add_team(team0)
 # testDB.remove_team("Greenwich")
-testDB.print_all()
-print(testDB.get_teams())
+# testDB.print_all()
+# print(testDB.get_teams())

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squash League - Edit Facility</title>
+    <style>
+        label{
+            display: inline-block;
+            float: left;
+            clear: left;
+            width: 500px;
+            text-align: left;
+        }
+        input {
+          display: inline-block;
+          float: left;
+        }
+        .checkboxes label {
+          display: inline-block;
+          padding-right: 10px;
+          white-space: nowrap;
+        }
+        .checkboxes input {
+          vertical-align: middle;
+        }
+        .checkboxes label span {
+          vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+<a href="/">Home</a>
+<form method="post" action="submiteditfacility">
+
+<span style="font-size:30px">
+    <label>Division Year </label><input type="text" name="year" value="{{facility.year}}">
+    <label>Division Full Name </label><input type="text" name="fullName" value="{{facility.fullName}}">
+    <label>Division Name Abbreviation </label><input type="text" name="shortName" value="{{facility.shortName}}">
+    <label>Division Start (m/d/yy) </label><input type="text" name="start" value="{{facility.start}}">
+    <label>Division End (m/d/yy)</label><input type="text" name="end" value="{{facility.end}}">
+    <label><input type="submit"></label><input type="hidden" name="facilityname" value="{{facility.fullName}}">
+</span>
+
+</form>
+</body>
+</html>

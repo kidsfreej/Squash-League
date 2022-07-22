@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squash League - New Facility</title>
+        <style>
+        label{
+            display: inline-block;
+            float: left;
+            clear: left;
+            width: 500px;
+            text-align: left;
+        }
+        input {
+          display: inline-block;
+          float: left;
+        }
+        .checkboxes label {
+          display: inline-block;
+          padding-right: 10px;
+          white-space: nowrap;
+        }
+        .checkboxes input {
+          vertical-align: middle;
+        }
+        .checkboxes label span {
+          vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+<a href="/">Home</a>
+<form method="post" action="submitnewfacility">
+
+<span style="font-size:30px">
+    <label>Division Year </label><input type="text" name="year">
+    <label>Division Full Name </label><input type="text" name="fullName">
+    <label>Division Name Abbreviation </label><input type="text" name="shortName">
+    <label>Division Start (m/d/yy) </label><input type="text" name="start">
+    <label>Division End (m/d/yy)</label><input type="text" name="end">
+    <label><input type="submit"></label>
+</span>
+
+</form>
+</body>
+</html>
