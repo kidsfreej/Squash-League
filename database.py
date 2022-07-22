@@ -107,6 +107,6 @@ facility0 = Facility("2022", "Fairfield County", "FCIAC", "12/31/2022", "2/14/20
 
 facilityDB = facilityDatabase()
 #facilityDB.remove_facility("Fairfield County")
-#facilityDB.add_facility(facility0)
+facilityDB.add_facility(facility0)
 print(facilityDB.get_facilities())
 facilityDB.print_all()

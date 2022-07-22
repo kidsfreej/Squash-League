@@ -22,36 +22,36 @@
 <h1>Edit {{team.fullName}}</h1>
 <form method="post" action="/submitnewteam">
     <span style="font-size:30px">
-        <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name" required><br>
-    <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" required><br>
-    <label>Division</label>  <input type="text" name="division" placeholder="Division" required><br>
+        <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name" value="{{team.fullName}}" required ><br>
+    <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" value="{{team.shortName}}" required><br>
+    <label>Division</label>  <input type="text" name="division" placeholder="Division" value="{{team.division}}" required><br>
         <label>Practice Days </label>
         <span style="font-size:20px;word-wrap:break-word" >
-       <label> Sunday<input type="checkbox" name="practiceDays-sunday" {{"checked=''" if "sunday" in team.practiceDays.day else ""}}></label>
-       <label> Monday<input type="checkbox" name="practiceDays-monday"></label>
-        <label>  Tuesday<input type="checkbox" name="practiceDays-tuesday"></label>
-       <label> Wednesday<input type="checkbox" name="practiceDays-wednesday"></label>
-       <label> Thursday<input type="checkbox" name="practiceDays-thursday"></label>
-      <label>  Friday<input type="checkbox" name="practiceDays-friday"></label>
-      <label>  Saturday<input type="checkbox" name="practiceDays-saturday"></label>
+       <label> Sunday<input type="checkbox" name="practiceDays-sunday" {{"checked=''" if "sunday" in team.practiceDays.days else ""}}></label>
+       <label> Monday<input type="checkbox" name="practiceDays-monday" {{"checked=''" if "monday" in team.practiceDays.days else ""}}></label>
+        <label>  Tuesday<input type="checkbox" name="practiceDays-tuesday" {{"checked=''" if "tuesday" in team.practiceDays.days else ""}}></label>
+       <label> Wednesday<input type="checkbox" name="practiceDays-wednesday" {{"checked=''" if "wednesday" in team.practiceDays.days else ""}}></label>
+       <label> Thursday<input type="checkbox" name="practiceDays-thursday" {{"checked=''" if "thursday" in team.practiceDays.days else ""}}></label>
+      <label>  Friday<input type="checkbox" name="practiceDays-friday"{{"checked=''" if "friday" in team.practiceDays.days else ""}}></label>
+      <label>  Saturday<input type="checkbox" name="practiceDays-saturday"{{"checked=''" if "saturday" in team.practiceDays.days else ""}}></label>
         </span>
     <br>
-    <label>Home Facility</label>  <input type="text" name="homeFacility" placeholder="Home Facility"><br>
-    <label>Alternate Facility</label>  <input type="text" name="alternativeFacility" placeholder="Alternate Facility"><br>
-   <label> No Play Dates (mm/dd/yy, mm/dd/yy, mm/dd/yy...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates"><br>
+    <label>Home Facility</label>  <input type="text" name="homeFacility" placeholder="Home Facility"value="{{team.homeFacility}}"><br>
+    <label>Alternate Facility</label>  <input type="text" name="alternativeFacility" placeholder="Alternate Facility" value="{{team.alternateFacility}}"><br>
+   <label> No Play Dates (mm/dd/yy, mm/dd/yy, mm/dd/yy...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates" value="{{team.noPlayDates}}"><br>
    <label> No Match Days (mm/dd/yy, mm/dd/yy, mm/dd/yy...) </label>
          <span style="font-size:20px;word-wrap:break-word" >
-               <label> Sunday<input type="checkbox" name="noMatchDays-sunday"></label>
-       <label> Monday<input type="checkbox" name="noMatchDays-monday"></label>
-        <label>  Tuesday<input type="checkbox" name="noMatchDays-tuesday"></label>
-       <label> Wednesday<input type="checkbox" name="noMatchDays-wednesday"></label>
-       <label> Thursday<input type="checkbox" name="noMatchDays-thursday"></label>
-      <label>  Friday<input type="checkbox" name="noMatchDays-friday"></label>
-      <label>  Saturday<input type="checkbox" name="noMatchDays-saturday"></label>
+               <label> Sunday<input type="checkbox" name="noMatchDays-sunday" {{"checked=''" if "sunday" in team.noMatchDays.days else ""}}></label>
+       <label> Monday<input type="checkbox" name="noMatchDays-monday" {{"checked=''" if "monday" in team.noMatchDays.days else ""}}></label>
+        <label>  Tuesday<input type="checkbox" name="noMatchDays-tuesday"{{"checked=''" if "tuesday" in team.noMatchDays.days else ""}}></label>
+       <label> Wednesday<input type="checkbox" name="noMatchDays-wednesday"{{"checked=''" if "wednesday" in team.noMatchDays.days else ""}}></label>
+       <label> Thursday<input type="checkbox" name="noMatchDays-thursday"{{"checked=''" if "thursday" in team.noMatchDays.days else ""}}></label>
+      <label>  Friday<input type="checkbox" name="noMatchDays-friday"{{"checked=''" if "friday" in team.noMatchDays.days else ""}}></label>
+      <label>  Saturday<input type="checkbox" name="noMatchDays-saturday"{{"checked=''" if "saturday" in team.noMatchDays.days else ""}}></label>
          </span>
         <br>
-   <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %" required><br>
-   <label> Start Date (mm/dd/yy) </label> <input type="text" name="startDate" placeholder="Start Date" required><br>
+   <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %" value="{{team.homeMatchPCT}}" required><br>
+   <label> Start Date (mm/dd/yy) </label> <input type="text" name="startDate" placeholder="Start Date"  value="{{team.startDate}}" required><br>
     <br>
     <br>
     <br>
