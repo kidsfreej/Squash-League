@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squash League - Edit Division Success</title>
+</head>
+<body>
+<a href="/">Home</a>
+<h1>SUCCESS</h1>
+<h2>Review your changes</h2>
+<span style="font-size:30px">
+{% for dat in data %}
+    {{dat.name}}: {{dat.__repr__()}} <br>
+{% endfor %}
+</span>
+<span style="font-size:20px">
+    You can always edit the team information again on the <a href="/editdivision">edit</a> page
+</span>
+</body>
+</html>

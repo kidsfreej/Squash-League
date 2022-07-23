@@ -15,6 +15,10 @@
           display: inline-block;
           float: left;
         }
+         select {
+          display: inline-block;
+          float: left;
+        }
         .checkboxes label {
           display: inline-block;
           padding-right: 10px;
@@ -29,12 +33,19 @@
     </style>
 </head>
 <body>
+<h1>Add Team</h1>
 <a href="/">Home</a>
 <form method="post" action="/submitnewteam">
     <span style="font-size:30px">
         <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name" required><br>
     <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" required><br>
-    <label>Division</label>  <input type="text" name="division" placeholder="Division" required><br>
+    <label>Division</label>  <select name="division">
+                <option value="$none">None</option>
+            {% for division in divisions %}
+        <option value="{{division}}">{{divisions[division].shortName}}</option>
+            {% endfor %}
+
+    </select>
         <label>Practice Days </label>
         <span style="font-size:20px;word-wrap:break-word" >
        <label> Sunday<input type="checkbox" name="practiceDays-sunday"></label>
@@ -46,10 +57,20 @@
       <label>  Saturday<input type="checkbox" name="practiceDays-saturday"></label>
         </span>
     <br>
-    <label>Home Facility</label>  <input type="text" name="homeFacility" placeholder="Home Facility"><br>
-    <label>Alternate Facility</label>  <input type="text" name="alternativeFacility" placeholder="Alternate Facility"><br>
-   <label> No Play Dates (mm/dd/yy, mm/dd/yy, mm/dd/yy...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates"><br>
-   <label> No Match Days (mm/dd/yy, mm/dd/yy, mm/dd/yy...) </label>
+        <label>Home Facility </label><select name="homeFacility">
+        <option value="$none">None</option>
+            {% for facility in facilities %}
+        <option value="{{facility}}">{{facilities[facility].shortName}}</option>
+            {% endfor %}
+    </select>
+    <label>Alternate Facility</label> <select name="alternativeFacility">
+        <option value="$none">None</option>
+            {% for facility in facilities %}
+        <option value="{{facility}}">{{facilities[facility].shortName}}</option>
+            {% endfor %}
+    </select>
+   <label> No Play Dates (m/d/yy, m/d/yy-m/d/yy...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates"><br>
+   <label> No Match Days </label>
          <span style="font-size:20px;word-wrap:break-word" >
                <label> Sunday<input type="checkbox" name="noMatchDays-sunday"></label>
        <label> Monday<input type="checkbox" name="noMatchDays-monday"></label>
@@ -61,7 +82,7 @@
          </span>
         <br>
    <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %" required><br>
-   <label> Start Date (mm/dd/yy) </label> <input type="text" name="startDate" placeholder="Start Date" required><br>
+   <label> Start Date (m/d/yy) </label> <input type="text" name="startDate" placeholder="Start Date" required><br>
     <br>
     <br>
     <br>

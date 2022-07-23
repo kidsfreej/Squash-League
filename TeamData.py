@@ -9,7 +9,10 @@ properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Hom
 class Prop:
     def __init__(self,name:str,value):
         self.name = name
-        self.value = value.strip()
+        if type(value) == str:
+            self.value = value.strip()
+        else:
+            self.value = value
         self.error = False
     def __repr__(self):
         return str(self.value)
@@ -73,7 +76,7 @@ class Dates:
                     self.dates.append(Date(name,sp.strip()))
                     self.repr_dates.append(Date(name,sp.strip()))
                     if self.dates[-1].error:
-                        print("here")
+
                         self.error=True
                         self.value = value
                         break
@@ -138,7 +141,7 @@ def error_messages(prop):
     else:
         raise NotImplementedError("oopsies")
     return m
-class Facility:
+class Division:
     def __init__(self,year,fullName,shortName,start,end):
         self.year =Prop("Divison Year", year)
         self.fullName = Prop("Division Full Name",fullName)
@@ -158,10 +161,10 @@ class Team:
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
         self.fullName = Prop("Full Name",fullName)
         self.shortName = Prop("Short Name",shortName)
-        self.division = Prop("Division",division)
+        self.division = Prop("Division",None if division == "$none" else division)
         self.practiceDays = Weekdays("Practice Days", practiceDays)
-        self.homeFacility = Prop("Home Facility",homeFacility)
-        self.alternateFacility = Prop("Alternate Facility",alternateFacility)
+        self.homeFacility = Prop("Home Facility",None if homeFacility == "$none" else homeFacility )
+        self.alternateFacility = Prop("Alternate Facility",None if alternateFacility == "$none" else alternateFacility)
         self.noPlayDates = Dates("No Play Dates",noPlayDates)
         self.noMatchDays = Weekdays("No Match Days",noMatchDays)
         self.homeMatchPCT = Number("Home Match %",homeMatchPCT)

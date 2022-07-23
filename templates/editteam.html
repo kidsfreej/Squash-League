@@ -14,17 +14,26 @@
         input {
           display: inline-block;
           float: left;
+        }select {
+          display: inline-block;
+          float: left;
         }
     </style>
 </head>
 <body>
 <a href="/">Home</a>
 <h1>Edit {{team.fullName}}</h1>
-<form method="post" action="/submitnewteam">
+<form method="post" action="/submitedit">
     <span style="font-size:30px">
         <label>Team Name</label> <input type="text" name="fullName" placeholder="Team Name" value="{{team.fullName}}" required ><br>
     <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" value="{{team.shortName}}" required><br>
-    <label>Division</label>  <input type="text" name="division" placeholder="Division" value="{{team.division}}" required><br>
+    <label>Division</label>  <select name="division" >
+                <option value="$none" {{'selected="selected"'  if team.division.value == None else ''}}>None</option>
+            {% for division in divisions %}
+        <option value="{{division}}" {{'selected="selected"'  if division == team.division else ''}}>{{divisions[division].shortName}}</option>
+            {% endfor %}
+
+    </select>
         <label>Practice Days </label>
         <span style="font-size:20px;word-wrap:break-word" >
        <label> Sunday<input type="checkbox" name="practiceDays-sunday" {{"checked=''" if "sunday" in team.practiceDays.days else ""}}></label>
@@ -36,8 +45,18 @@
       <label>  Saturday<input type="checkbox" name="practiceDays-saturday"{{"checked=''" if "saturday" in team.practiceDays.days else ""}}></label>
         </span>
     <br>
-    <label>Home Facility</label>  <input type="text" name="homeFacility" placeholder="Home Facility"value="{{team.homeFacility}}"><br>
-    <label>Alternate Facility</label>  <input type="text" name="alternativeFacility" placeholder="Alternate Facility" value="{{team.alternateFacility}}"><br>
+    <label>Home Facility</label>  <select name="homeFacility">
+        <option value="$none" {{'selected="selected"'  if team.homeFacility.value == None else ''}}>None</option>
+            {% for facility in facilities %}
+        <option value="{{facility}}" {{'selected="selected"'  if facility == team.homeFacility else ''}}>{{facilities[facility].shortName}}</option>
+            {% endfor %}
+    </select>
+    <label>Alternate Facility</label>  <select name="alternativeFacility">
+        <option value="$none" {{'selected="selected"'  if team.alternateFacility.value == None else ''}}>None</option>
+            {% for facility in facilities %}
+        <option value="{{facility}}" {{'selected="selected"'  if facility == team.alternateFacility else ''}}>{{facilities[facility].shortName}}</option>
+            {% endfor %}
+    </select>
    <label> No Play Dates (mm/dd/yy, mm/dd/yy, mm/dd/yy...)</label>  <input type="text" name="noPlayDates" placeholder="No Play Dates" value="{{team.noPlayDates}}"><br>
    <label> No Match Days (mm/dd/yy, mm/dd/yy, mm/dd/yy...) </label>
          <span style="font-size:20px;word-wrap:break-word" >
@@ -55,6 +74,7 @@
     <br>
     <br>
     <br>
+        <input type="hidden" name="teamname" value="{{team.fullName}}">
     <input type="submit" value="Submit">
         </span>
 </form>

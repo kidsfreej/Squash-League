@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Squash League - New Facility</title>
+    <title>Squash League - New Division</title>
         <style>
         label{
             display: inline-block;
@@ -30,14 +30,42 @@
 </head>
 <body>
 <a href="/">Home</a>
-<form method="post" action="submitnewfacility">
+<h1>Add Facility</h1>
+<form method="post" action="/submitnewdivision">
 
 <span style="font-size:30px">
-    <label>Division Year </label><input type="text" name="year">
-    <label>Division Full Name </label><input type="text" name="fullName">
-    <label>Division Name Abbreviation </label><input type="text" name="shortName">
-    <label>Division Start (m/d/yy) </label><input type="text" name="start">
-    <label>Division End (m/d/yy)</label><input type="text" name="end">
+
+    <label>Full Name </label><input type="text" name="fullName">
+    <label>Name Abbreviation </label><input type="text" name="shortName">
+    <label>Days can host matches </label>
+
+             <span style="font-size:20px;word-wrap:break-word" >
+               <label> Sunday<input type="checkbox" name="daysCanHost-sunday"></label>
+       <label> Monday<input type="checkbox" name="daysCanHost-monday"></label>
+        <label>  Tuesday<input type="checkbox" name="daysCanHost-tuesday"></label>
+       <label> Wednesday<input type="checkbox" name="daysCanHost-wednesday"></label>
+       <label> Thursday<input type="checkbox" name="daysCanHost-thursday"></label>
+      <label>  Friday<input type="checkbox" name="daysCanHost-friday"></label>
+      <label>  Saturday<input type="checkbox" name="daysCanHost-saturday"></label>
+         </span>
+        <br>
+
+    <label>Days cannot host matches</label><input type="text" name="start">
+
+                 <span style="font-size:20px;word-wrap:break-word" >
+               <label> Sunday<input type="checkbox" name="daysCantHost-sunday"></label>
+       <label> Monday<input type="checkbox" name="daysCantHost-monday"></label>
+        <label>  Tuesday<input type="checkbox" name="daysCantHost-tuesday"></label>
+       <label> Wednesday<input type="checkbox" name="daysCantHost-wednesday"></label>
+       <label> Thursday<input type="checkbox" name="daysCantHost-thursday"></label>
+      <label>  Friday<input type="checkbox" name="daysCantHost-friday"></label>
+      <label>  Saturday<input type="checkbox" name="daysCantHost-saturday"></label>
+         </span>
+        <br>
+
+
+    <label>Dates cannot host matches</label><input type="text" name="end">
+    <label>Can only host matches for</label><input type="text" name="end">
     <label><input type="submit"></label>
 </span>
 
