@@ -1,5 +1,5 @@
 import sqlite3
-from TeamData import Team, Facility, Prop
+from TeamData import *
 
 
 class Database:
@@ -97,7 +97,7 @@ class facilityDatabase:
 # FullName, AbbvName, Division , PracticeDays , HomeFacility , AlternateFacility ,NoPlayDates , NoMatchDays , HomeMatchPCT , StartDate
 team0 = Team("Greenwich", "GHS", "FCIAC", "Monday, Wednesday, Friday", "Chelsea Piers", "Chelsea Piers", "12/31/22",
              "12/31/22", "50", "12/1/22")
-facility0 = Facility("2022", "Fairfield County", "FCIAC", "12/31/2022", "2/14/2023")
+# facility0 = Facility("2022", "Fairfield County", "FCIAC", "12/31/2022", "2/14/2023")
 
 #testDB = Database()
 # testDB.add_team(team0)
@@ -105,8 +105,8 @@ facility0 = Facility("2022", "Fairfield County", "FCIAC", "12/31/2022", "2/14/20
 #testDB.print_all()
 #print(testDB.get_teams())
 
-facilityDB = facilityDatabase()
+# facilityDB = facilityDatabase()
 #facilityDB.remove_facility("Fairfield County")
-facilityDB.add_facility(facility0)
-print(facilityDB.get_facilities())
-facilityDB.print_all()
+# facilityDB.add_facility(facility0)
+# print(facilityDB.get_facilities())
+# facilityDB.print_all()

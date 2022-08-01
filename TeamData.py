@@ -23,7 +23,22 @@ class Prop:
         if type(other)!=Prop:
             raise Exception("uh oh")
         return self.value==other.value
+class Arr:
+    def __init__(self,name:str,value):
+        self.name = name
+        self.value = value
+        self.error = False
+    def __repr__(self):
+        return ', '.join(self.value)
+    def __len__(self):
+        return len(self.value)
 class Date:
+    def to_datetime(self):
+        return datetime.datetime(self.year,self.month,self.day)
+    @staticmethod
+    def from_date(month,day,year):
+        a = Date("","",month,day,year)
+        return a
     def __init__(self,name:str,value:str,month=-1,day=-1,year=-1):
         self.error = False
         if month !=-1:
@@ -42,19 +57,47 @@ class Date:
         except:
             self.error=True
             self.value = value
+
     def __repr__(self):
         return f"{self.month}/{self.day}/{str(self.year)[2:]}"
     def __eq__(self, other):
         return self.month == other.month and self.day == other.day and self.year == other.year
+    def __hash__(self):
+        return hash(f"{self.day} {self.month} {self.year}")
 
 class Dates:
+    def to_set(self):
+        s = set()
+        for date in self.dates:
+            s.add(datetime.datetime(date.year,date.month,date.day))
+        return s
+    @staticmethod
+    def from_start_end(start:Date,end:Date):
+        days = set()
+        cur_date = datetime.datetime(start.year,start.month,start.day)
+        end_date = datetime.datetime(end.year,end.month,end.day)
+        while cur_date!=end_date:
+            days.add(Date.from_date(cur_date.month,cur_date.day,cur_date.year))
+            cur_date +=datetime.timedelta(days=1)
+        days.add(Date.from_date(cur_date.month,cur_date.day,cur_date.year))
+        d = Dates("",None)
+        d.repr_dates = None
+        d.dates = days
+        d.start = start
+        d.end = end
+        return d
     def __init__(self,name:str,value:str):
+        if value==None:
+            self.start =None
+            self.end = None
+            self.name=""
+            return
         self.error = False
         self.name =name
         self.date_ranges = []
         self.repr_dates = []
         split = value.strip().split(",")
-        self.dates = []
+        self.dates = set()
         if len(split)==1 and split[0]=="":
             return
 
@@ -68,14 +111,15 @@ class Dates:
                     cur_date =datetime.datetime.strptime(ranged[0].strip(),"%m/%d/%y")
                     end_date = datetime.datetime.strptime(ranged[1].strip(),"%m/%d/%y")
                     while cur_date!= end_date:
-                        self.dates.append(Date("","",cur_date.month, cur_date.day, cur_date.year))
+                        self.dates.add(Date("","",cur_date.month, cur_date.day, cur_date.year))
                         cur_date +=datetime.timedelta(days=1)
 
-                    self.dates.append(Date("","",cur_date.month,cur_date.day,cur_date.year))
+                    self.dates.add(Date("","",cur_date.month,cur_date.day,cur_date.year))
                 else:
-                    self.dates.append(Date(name,sp.strip()))
-                    self.repr_dates.append(Date(name,sp.strip()))
-                    if self.dates[-1].error:
+                    d = Date(name,sp.strip())
+                    self.dates.add(d)
+                    self.repr_dates.append(d)
+                    if d.error:
 
                         self.error=True
                         self.value = value
@@ -84,10 +128,12 @@ class Dates:
             self.error=True
             self.value = value
     def __repr__(self):
+        if self.repr_dates is None:
+            return ', '.join(list(map(repr,self.dates)))
 
         return ', '.join(list(map(str,self.repr_dates))+[repr(x[0])+"-"+repr(x[1]) for x in self.date_ranges])
 class Weekday:
-    weekdays = ("sunday","monday","tuesday","wednesday","thursday","friday","saturday")
+    weekdays = ("monday","tuesday","wednesday","thursday","friday","saturday","sunday")
     def __init__(self,name:str,value:str):
         self.name = name
         self.value = value
@@ -102,10 +148,18 @@ class Weekday:
             return self.value == other
         return self.value == other.value
 class Weekdays:
+    def to_weekday_arr(self):
+        arr =[]
+        for day in self.days:
+            for i in range(len(Weekday.weekdays)):
+                if Weekday.weekdays[i]==day.value:
+                    arr.append(i)
+        return arr
     def __init__(self,name:str,days,error=False):
         self.name = name
         self.days = days
         self.error = error
+
     def __repr__(self):
         return ', '.join([repr(x) for x in self.days])
     @staticmethod
@@ -141,6 +195,7 @@ def error_messages(prop):
     else:
         raise NotImplementedError("oopsies")
     return m
+
 class Division:
     def __init__(self,year,fullName,shortName,start,end):
         self.year =Prop("Divison Year", year)
@@ -156,6 +211,24 @@ class Division:
 
                 errors.append(error_messages(prop))
         self.errors = errors
+
+class Facility:
+    def __init__(self,fullName,shortName,daysCanHost,datesCantHost,allowedTeams):
+        self.fullName = Prop("Full Name",fullName)
+        self.shortName =  Prop("Name Abbreviation",shortName)
+        self.daysCanHost = Weekdays("Days can Host Matches",daysCanHost)
+        self.datesCantHost = Dates("Dates can't host (m/d/yy)",datesCantHost)
+        self.allowedTeams =Arr("Can only host matches for",allowedTeams)
+
+        self.properties = [self.fullName,self.shortName,self.daysCanHost,self.datesCantHost,self.allowedTeams]
+        errors = []
+        for prop in self.properties:
+            if prop.error:
+
+
+                errors.append(error_messages(prop))
+        self.errors = errors
+
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
                  alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
@@ -177,6 +250,7 @@ class Team:
 
                 errors.append(error_messages(prop))
         self.errors = errors
+
     # def __str__(self):
     #     s = ""
     #     for prop in self.properties:

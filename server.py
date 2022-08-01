@@ -1,21 +1,31 @@
+import time
+
 from TeamData import *
 from flask import Flask
 from flask import send_from_directory
 from flask import render_template
 from flask import request
+import threading
 from database import Database
-
+import pickle
 app = Flask(__name__)
 
 db = Database()
 db.print_all()
-
+debug = True
 
 teams = db.get_teams()
 #DEBUG
 teams = {}
 divisions = {}
 facilities = {}
+with open("data.pickle","rb") as f:
+    d = pickle.load(f)
+    teams = d["teams"]
+    divisions = d["divisions"]
+    facilities = d["facilities"]
+pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities}
+
 @app.route("/submitnewteam",methods=["POST"])
 def add_new_team():
 
@@ -78,7 +88,7 @@ def delete_page():
     name = request.args.get("team")
     if name==None or name not in teams:
         return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a team</h1>"
-    db.remove_team(name)
+
     return render_template("deleteteam.html",name=name)
 
 @app.route("/newdivision")
@@ -104,7 +114,9 @@ def edit_division():
         if request.form["delete"] not in divisions:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Division does not exit!"
         divisions.pop(request.form["delete"])
-
+        for team in teams:
+            if team.division.value == request.form["delete"]:
+                team.division.value = None
         return render_template("selectdivisionedit.html", teams=divisions)
     arg = request.args.get("division")
     if arg==None:
@@ -113,21 +125,7 @@ def edit_division():
     if arg in divisions:
         return render_template("editdivision.html", facility=divisions[arg])
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
-@app.route("/submiteditdivision",methods=["POST"])
-def submit_edit_division():
-    name = request.form["facilityname"]
-    if name in divisions:
 
-        t = Division(request.form["year"], request.form["fullName"], request.form["shortName"], request.form["start"], request.form["end"])
-
-        if len(t.errors) > 0:
-            return render_template("submitnewteam_fail.html", errors=t.errors)
-        divisions.pop(name)
-        divisions[t.fullName.value] = t
-        # db.remove_team(name)
-        # db.add_team(t)
-        return render_template("submitteddivision.html", data=t.properties)
-    return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a division!!"
 @app.route("/deletedivision")
 def delete_division():
     name = request.args.get("division")
@@ -137,4 +135,102 @@ def delete_division():
         return f"<a href='/'>Home</a><h1>ERROR: {html.escape(name)} is not a division</h1>"
     return render_template("deletedivision.html",name=name)
 
-app.run()
+
+@app.route("/newfacility")
+def new_facility_page():
+    return render_template("newfacility.html",teams=teams)
+
+@app.route("/submitnewfacility",methods=["POST"])
+def add_new_facility():
+    parsed_teams = []
+    for i in range(1,31):
+        if "team-"+str(i) in request.form:
+            if request.form["team-"+str(i)]=="$none" or request.form["team-"+str(i)] in parsed_teams:
+                continue
+            parsed_teams.append(request.form["team-"+str(i)])
+        else:
+            break
+    t = Facility(request.form["fullName"],request.form["shortName"],Weekdays.parse_weekdays(request.form,"daysCanHost"),request.form["datesCantHost"],parsed_teams)
+    if len(t.errors)>0:
+        return render_template("submitnewteam_fail.html",errors=t.errors)
+    if t.fullName.value in facilities:
+        return render_template("submitnewteam_fail.html",errors=[t.fullName.value+" is already a facility!"])
+    facilities[t.fullName.value] = t
+
+
+    return render_template("submitnewfacility.html",data=t.properties)
+
+@app.route("/editfacilities")
+def edit_facilities():
+
+    if request.method=="POST":
+        if request.form["delete"] not in facilities:
+            return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
+        facilities.pop(request.form["delete"])
+        for team in teams:
+            if team.homeFacility.value == request.form["delete"]:
+                team.homeFacility.value = None
+            if team.alternateFacility.value == request.form["delete"]:
+                team.alternateFacility.value = None
+        return render_template("selectfacilityedit.html", teams=facilities)
+    arg = request.args.get("facility")
+    if arg==None:
+        return render_template("selectfacilityedit.html",teams=facilities)
+
+    if arg in facilities:
+        return render_template("editfacility.html", facility=facilities[arg], teams=teams)
+    return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
+@app.route("/submiteditfacility",methods=["POST"])
+def submit_edit_facility():
+    name = request.form["facilityname"]
+    if name in facilities:
+
+        parsed_teams = []
+        for i in range(1, 31):
+            if "team-" + str(i) in request.form:
+                if request.form["team-" + str(i)] == "$none" or request.form["team-" + str(i)] in parsed_teams:
+                    continue
+                parsed_teams.append(request.form["team-" + str(i)])
+            else:
+                break
+        t = Facility(request.form["fullName"], request.form["shortName"],
+                     Weekdays.parse_weekdays(request.form, "daysCanHost"), request.form["datesCantHost"], parsed_teams)
+
+        if len(t.errors) > 0:
+            return render_template("submitnewteam_fail.html", errors=t.errors)
+        facilities.pop(name)
+        facilities[t.fullName.value] = t
+        # db.remove_team(name)
+        # db.add_team(t)
+        return render_template("submiteditfacility.html", data=t.properties)
+    return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a facility!!"
+@app.route("/submiteditdivision",methods=["POST"])
+def submit_edit_division():
+    name = request.form["divisionname"]
+    if name in divisions:
+
+        t = Division(request.form["year"], request.form["fullName"], request.form["shortName"],
+                     request.form["start"], request.form["end"])
+
+        if len(t.errors) > 0:
+            return render_template("submitnewteam_fail.html", errors=t.errors)
+        divisions.pop(name)
+        divisions[t.fullName.value] = t
+        # db.remove_team(name)
+        # db.add_team(t)
+        return render_template("submiteditdivision.html", data=t.properties)
+    return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a division!!"
+
+@app.route("/deletefacility")
+def delete_facility():
+    name = request.args.get("facility")
+    if name==None or name not in facilities:
+        return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a facility</h1>"
+    return render_template("deletefacility.html",name=name)
+
+def deubg_pickle():
+    while True:
+        time.sleep(5)
+        with open("data.pickle","wb") as f:
+            pickle.dump(pickle_data,f)
+
