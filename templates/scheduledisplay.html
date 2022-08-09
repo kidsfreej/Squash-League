@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Schedule Display</title>
+    <style>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+
+</style>
+</head>
+<body>
+<h1>Schedule Display</h1>
+
+<table>
+    <tr>
+        <th></th>
+    {% for team in teams %}
+        <th>{{team.fullName}}</th>
+    {% endfor %}
+     </tr>
+    {% for y in range(teams.__len__()) %}
+        <tr>
+            <th>{{teams[y].fullName}}</th>
+            {% for x in range(teams.__len__()) %}
+                <td>
+                    {{scheduleArr[y][x].html_display() if scheduleArr[y][x] else '-'}}
+                </td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+
+</table>
+</body>
+</html>

@@ -1,24 +1,22 @@
 import time
 
-from TeamData import *
+import flask
+
+
 from flask import Flask
 from flask import send_from_directory
 from flask import render_template
 from flask import request
 import threading
+
+import montecarlo
 from database import Database
 import pickle
+from montecarlo import *
 app = Flask(__name__)
 
-db = Database()
-db.print_all()
-debug = True
 
-teams = db.get_teams()
-#DEBUG
-teams = {}
-divisions = {}
-facilities = {}
+
 with open("data.pickle","rb") as f:
     d = pickle.load(f)
     teams = d["teams"]
@@ -202,7 +200,7 @@ def submit_edit_facility():
         facilities[t.fullName.value] = t
         # db.remove_team(name)
         # db.add_team(t)
-        return render_template("submiteditfacility.html", data=t.properties)
+        return  render_template("submiteditfacility.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a facility!!"
 @app.route("/submiteditdivision",methods=["POST"])
 def submit_edit_division():
@@ -228,9 +226,50 @@ def delete_facility():
         return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a facility</h1>"
     return render_template("deletefacility.html",name=name)
 
+@app.route("/generateschedule",methods=["POST","GET"])
+def generate_schedule_page():
+    global isscheduling
+    global cap_iterations
+    global schedules_dict
+    global iterations_counter
+
+    if 'iterations' in request.form:
+
+        cap_iterations = int(request.form["iterations"])*len(teams)
+        threading.Thread(target=generate_schedule, args=(request.form["name"],divisions[request.form["division"]], int(request.form["iterations"]), teams, facilities, isscheduling, iterations_counter, schedules_dict)).start()
+
+
+        return render_template("loadingscreen.html",iters=iterations_counter[0],maxiters=cap_iterations,name=request.form["name"])
+
+    return render_template("generateschedule.html", divisions=divisions)
+@app.route("/loadingscreenpost",methods=["POST"])
+def loading_screen():
+    global isscheduling
+    global cap_iterations
+    global schedules_dict
+    global iterations_counter
+    if request.form["name"] in schedules_dict:
+        return flask.redirect("/editschedule?schedule="+request.form["name"])
+    return render_template("loadingscreen.html", iters=iterations_counter[0], maxiters=cap_iterations,name=request.form["name"])
+@app.route("/cancelscheduler",methods=["POST"])
+def cancel_scheduler():
+    global isscheduling
+    isscheduling[0] = False
+    return flask.redirect("/")
+@app.route("/editschedule",methods=["GET","POST"])
+def edit_schedules():
+    global schedules_dict
+
+    schedu:Schedule=  schedules_dict[request.args["schedule"]]
+    print(schedu)
+    print(schedu.games_in_table_order())
+    return render_template("scheduledisplay.html",teams=list(schedu.teams.values()),scheduleArr=schedu.games_in_table_order())
 def deubg_pickle():
     while True:
         time.sleep(5)
         with open("data.pickle","wb") as f:
             pickle.dump(pickle_data,f)
-
+# @app.route("")
+t = threading.Thread(target=deubg_pickle)
+t.start()
+app.run()
