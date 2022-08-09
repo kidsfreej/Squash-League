@@ -104,6 +104,8 @@ def generate_schedule(name,division:Division,iterations,teams:Dict[str,Team],fac
         else:
             s = t.ranked()[0]
     buffer[name] = s
+
+    iterations_counter[0] = 0
     isscheduling[0] = False
 # ateam = rawTeams["a team"]
 # bteam = rawTeams["B TEAM"]

@@ -19,7 +19,7 @@ app = Flask(__name__)
 
 with open("data.pickle","rb") as f:
     d = pickle.load(f)
-    teams = d["teams"]
+    teams :Dict[str,Team] = d["teams"]
     divisions = d["divisions"]
     facilities = d["facilities"]
 pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities}
@@ -234,12 +234,12 @@ def generate_schedule_page():
     global iterations_counter
 
     if 'iterations' in request.form:
-
-        cap_iterations = int(request.form["iterations"])*len(teams)
+        teamsindiv = [teams[x] for x in teams if teams[x].division.value==request.form["division"]]
+        cap_iterations = int(request.form["iterations"])*teamsindiv
         threading.Thread(target=generate_schedule, args=(request.form["name"],divisions[request.form["division"]], int(request.form["iterations"]), teams, facilities, isscheduling, iterations_counter, schedules_dict)).start()
 
 
-        return render_template("loadingscreen.html",iters=iterations_counter[0],maxiters=cap_iterations,name=request.form["name"])
+        return render_template("loadingscreen.html",iters=iterations_counter[0],maxiters=teamsindiv,name=request.form["name"])
 
     return render_template("generateschedule.html", divisions=divisions)
 @app.route("/loadingscreenpost",methods=["POST"])
@@ -264,12 +264,12 @@ def edit_schedules():
     print(schedu)
     print(schedu.games_in_table_order())
     return render_template("scheduledisplay.html",teams=list(schedu.teams.values()),scheduleArr=schedu.games_in_table_order())
-def deubg_pickle():
+def debug_pickle():
     while True:
         time.sleep(5)
         with open("data.pickle","wb") as f:
             pickle.dump(pickle_data,f)
 # @app.route("")
-t = threading.Thread(target=deubg_pickle)
+t = threading.Thread(target=debug_pickle)
 t.start()
 app.run()
