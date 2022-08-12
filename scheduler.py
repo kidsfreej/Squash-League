@@ -66,7 +66,8 @@ class RawTeam:
         return self.fullName==other.fullName
     def __ne__(self, other):
         return self.fullName != other.fullName
-
+    def __repr__(self):
+        return f"<Raw: {self.fullName}>"
 class Game:
     def __init__(self, date:datetime.datetime, team1:RawTeam, team2:RawTeam, rfacility:RawFacility):
         self.date = date
@@ -76,7 +77,7 @@ class Game:
     def __repr__(self):
         return f"<{Weekday.weekdays[self.date.weekday()]} {self.date} {self.rteam1.fullName} vs {self.rteam2.fullName} at {self.rfacility.fullName}>"
     def __eq__(self, other):
-        return self.date ==other.date and self.rteam1 == other.rteam1
+        return self.date ==other.date and self.rteam1 == other.rteam1 and self.rteam2==other.rteam2
     def __ne__(self, other):
         return not (self==other)
     def __deepcopy__(self, memodict={}):
@@ -88,6 +89,7 @@ class ScoredSchedule:
     def __init__(self,schedule):
         self.schedule = schedule
         self.score = schedule.score()
+
     def __repr__(self):
         return f"\n<{self.score}\n{self.schedule}>"
 
@@ -113,8 +115,23 @@ class Schedule:
         self.optimal_distance = self.calculate_optimal_distance()
     def calculate_optimal_distance(self):
         dist = (self.division.end-self.division.start).days.real
-        avg_dist = dist/self.max_games
+        avg_dist = dist/(len(self.teams)+2)
         return avg_dist
+    def games_by_combo(self):
+        combos = []
+
+        for team1 in self.teams:
+            for team2 in self.teams:
+                if self.teams[team1]!=self.teams[team2] and (self.teams[team2],self.teams[team1]) not in combos:
+                    combos.append((self.teams[team1],self.teams[team2]))
+                    for game in self.games_by_team[team1]:
+
+                        if game.rteam2.fullName == team2:
+                            yield (combos[-1],game)
+                            break
+                    else:
+                        yield (combos[-1],None)
+
     def games_in_table_order(self):
         d = [[None for x in range(len(self.teams))] for x in range(len(self.teams))]
         x=0
@@ -159,47 +176,102 @@ class Schedule:
         self.team_away_plays[game.rteam1.fullName] -=1 if game.rfacility.fullName!= game.rteam1.homeFacility else 0
         self.team_home_plays[game.rteam2.fullName] -=1 if game.rfacility.fullName== game.rteam2.homeFacility else 0
         self.team_away_plays[game.rteam2.fullName] -=1 if game.rfacility.fullName!= game.rteam2.homeFacility else 0
-        self.games_by_team[game.rteam1.fullName].pop()
-        self.games_by_team[game.rteam2.fullName].pop()
-    def score(self):
-        max_score = 100*self.max_games*2+9*self.max_games*self.optimal_distance
+        i=0
+        for g in self.games_by_team[game.rteam1.fullName]:
+            if g.rteam2.fullName == game.rteam2.fullName and g.rteam1.fullName == game.rteam1.fullName:
+                self.games_by_team[game.rteam1.fullName].pop(i)
+                break
+            i+=1
+        i=0
+        for g in self.games_by_team[game.rteam2.fullName]:
+            if g.rteam2.fullName == game.rteam2.fullName and g.rteam1.fullName == game.rteam1.fullName:
+                self.games_by_team[game.rteam2.fullName].pop(i)
+                break
+            i+=1
+    def remove_game(self,game:Game):
+        self.games[game.date].remove(game)
+        self.team_home_plays[game.rteam1.fullName] -=1 if game.rfacility.fullName== game.rteam1.homeFacility else 0
+        self.team_away_plays[game.rteam1.fullName] -=1 if game.rfacility.fullName!= game.rteam1.homeFacility else 0
+        self.team_home_plays[game.rteam2.fullName] -=1 if game.rfacility.fullName== game.rteam2.homeFacility else 0
+        self.team_away_plays[game.rteam2.fullName] -=1 if game.rfacility.fullName!= game.rteam2.homeFacility else 0
+        i=0
+        for g in self.games_by_team[game.rteam1.fullName]:
+            if g.rteam2.fullName == game.rteam2.fullName and g.rteam1.fullName == game.rteam1.fullName:
+                self.games_by_team[game.rteam1.fullName].pop(i)
+                break
+            i+=1
+        i=0
+        for g in self.games_by_team[game.rteam2.fullName]:
+            if g.rteam2.fullName == game.rteam2.fullName and g.rteam1.fullName == game.rteam1.fullName:
+                self.games_by_team[game.rteam2.fullName].pop(i)
+                break
+            i+=1
+    def score(self,mute=True):
         #sum of all teams, homepct - actualpct
         #+100 everytime facility is not at alternative facility
         #+9 points for every day farther from the optimal distance for games
+        if not mute:
+            print(self)
         score = 0
+        game_counter = 0
         for team in self.team_home_plays:
-            score+=abs(self.team_home_plays[team]*100/(self.team_home_plays[team]+self.team_away_plays[team]) - self.teams[team].homeMatchPCT)
+            if self.team_home_plays[team]+self.team_away_plays[team]!=0:
+                score+=abs(self.team_home_plays[team]*100/(self.team_home_plays[team]+self.team_away_plays[team]) - self.teams[team].homeMatchPCT)
+        if not mute:
+            print("by home play pct:",score)
+
+        temp_score=0
         for date in self.games:
             for game in self.games[date]:
                 if game.rfacility.fullName!= game.rteam1.alternateFacility or game.rfacility.fullName != game.rteam2.alternateFacility:
-                    score+=100
+                    temp_score+=100
+                game_counter+=1
+        if not mute:
+            print("by not using alternate facility:", temp_score)
+        score+=temp_score
+        temp_score=0
+        temp_score+=(self.max_games-game_counter-len(self.team_combos))*400
+        if not mute:
+            print("by days missing:",temp_score)
+        score+=temp_score
+
+        temp_score = 0
         for team_name in self.games_by_team:
             for i in range(len(self.games_by_team[team_name])-1):
-                score+=abs((self.games_by_team[team_name][i+1].date-self.games_by_team[team_name][i].date).days.real-self.optimal_distance)*9
-        return -(score/max_score-.5)*2
+                temp_score+=abs((self.games_by_team[team_name][i+1].date-self.games_by_team[team_name][i].date).days.real-self.optimal_distance)*9
+        score += temp_score
+        if not mute:
+            print("by days off:",temp_score)
+            print("total score:",score)
+        return score
+    def game_by_team_combo(self,combo):
+        for g in self.games_by_team[combo[0].fullName]:
+            if g.rteam1 in combo and g.rteam2 in combo:
+                return g
     def find_best(self,iters):
         schedules = []
         for i in range(iters):
             schedules.append(ScoredSchedule(self.recurse()))
         schedules.sort(key=lambda x: -x.score)
         return schedules
-    def recurse(self):
+    def sudoku(self):
         if len(self.team_combos)==0:
             return copy(self)
         combo = self.team_combos.pop(0)
         posses = self.possible_games(combo[0],combo[1])
-        random.shuffle(posses)
         if len(posses)>0:
-            for poss in posses:
-                self.add_game(poss)
-                k =self.recurse()
-                if k:
-                    self.remove_lastest_game(poss)
-                    self.team_combos.append(combo)
-                    return k
-                self.remove_lastest_game(poss)
+            poss = random.choice(posses)
+            self.add_game(poss)
+            k =self.sudoku()
+            self.remove_lastest_game(poss)
+            self.team_combos.append(combo)
+            return k
+
+        c = self.sudoku()
         self.team_combos.append(combo)
-        return False
+        return c
+    def recurse(self):
+        return self.recurse()
 
     def possible_games(self, team1: RawTeam, team2: RawTeam) -> List[Game]:
         possible_games  = []
@@ -238,6 +310,35 @@ class Schedule:
         return c
     def __repr__(self):
         return f"<Schedule: {[self.games[date] for date in self.games if len(self.games[date])>0]}>"
+    def generate_schedule(self,iterations,iterations_counter):
+        current = self.sudoku()
+        best_sched = copy(current)
+        best_score = current.score()
+        for i in range(iterations):
+            iterations_counter[0]=i+1
+            l :List[ScoredSchedule]= []
+            for combo,game in current.games_by_combo():
+                c = copy(current)
+                if game:
+                    c.remove_game(game)
+                c.team_combos.insert(0,combo)
+                bisect.insort(l,ScoredSchedule(c),key=lambda x:x.score)
+
+            last_half = l[:len(l)//3]
+            for scored_sched in last_half:
+                combo = current.game_by_team_combo(scored_sched.schedule.team_combos[0])
+                if combo:
+                    current.remove_game(combo)
+                current.team_combos.append(scored_sched.schedule.team_combos[0])
+            current = current.sudoku()
+            cur_score=current.score()
+
+            if cur_score<best_score:
+                print("here:",i,"score:",cur_score)
+                best_score=cur_score
+                best_sched = copy(current)
+        return best_sched
+
 # class SwapSchedule(Schedule):
 #     def __init__(self,schedule:Schedule,swaps:int=0):
 #         super().__init__(None,None)

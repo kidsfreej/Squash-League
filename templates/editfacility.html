@@ -72,7 +72,7 @@
                     x = parseInt(dom.value);
                     var n = document.createElement("input");
                     var m = document.getElementById("here");
-                    m.innerHTML +=`<select name="team-`+x+`">
+                    m.innerHTML +=`<select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-`+x+`">
                                <option value="$none">None</option>
                     {% for team in teams %}
                 <option value="{{team}}">{{teams[team].shortName}}</option>
@@ -91,7 +91,7 @@
         <input type="number" id="count" onchange="change();" placeholder="Team Count (number)" min="0" value="{{facility.allowedTeams.__len__()}}"  ><label></label><div id="here">
     {% set i = 0 %}
     {% for ateam in facility.allowedTeams.value %}
-    <select name="team-{{i+1}}">
+    <select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-{{i+1}}">
         <option value="$none">None</option>
         {% for team in teams %}
             <option value="{{teams[team].fullName}}" {{'selected="selected"' if ateam==teams[team].fullName.value else ""}}>{{teams[team].shortName}}</option>

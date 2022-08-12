@@ -12,8 +12,8 @@ class ScheduleTree:
     def run(self):
         if len(self.head.children)==0:
             self.head.create_children()
-        if not self.head.schedule.recurse():
-            return "no possible"
+        if len(self.head.children)==1:
+            return "no_possible"
         self.head.selection()
 
     def ranked(self):
@@ -26,15 +26,10 @@ class ScheduleNode:
         self.score = 0
         self.visits = 0
         self.parent = parent
-        self.no_possible = False
     def rollout(self):
-        if self.no_possible:
-            return -1
+
         rec = self.schedule.recurse()
-        if rec:
-            return rec.score()
-        self.no_possible =True
-        return -1
+        return rec.score()
     def highest_uct_child(self) -> ScheduleNode:
         maxv = -999999
         maxc = None
@@ -53,7 +48,7 @@ class ScheduleNode:
         else:
             add = self.score / self.visits
 
-        return add  * 1.4142 * math.sqrt(math.log(self.parent.visits) / (self.visits + 1))
+        return add  + 1.4142 * math.sqrt(math.log(self.parent.visits) / (self.visits + 1))
     def selection(self):
 
         self.visits+=1
@@ -67,7 +62,7 @@ class ScheduleNode:
         self.score+=score
         return score
     def create_children(self):
-        if len(self.schedule.team_combos)==0 or self.no_possible:
+        if len(self.schedule.team_combos)==0:
             return
         perms = self.schedule.possible_games(self.schedule.team_combos[0][0],self.schedule.team_combos[0][1])
         for perm in perms:
@@ -75,7 +70,9 @@ class ScheduleNode:
             c.add_game(perm)
             c.team_combos.pop(0)
             self.children.append(ScheduleNode(self.tree, c, self))
-
+        c=  copy(self.schedule)
+        c.team_combos.pop(0)
+        self.children.append(ScheduleNode(self.tree,c,self))
 schedules_dict :Dict[str,Schedule]= {}
 
 isscheduling = [False]
@@ -87,23 +84,12 @@ def generate_schedule(name,division:Division,iterations,teams:Dict[str,Team],fac
 
 
     s = Schedule(RawDivision(division),{x.fullName.value:RawTeam(x) for x in teams.values() if x.division.value==division.fullName.value},{x.fullName.value:RawFacility(x) for x in facilities.values()})
-    c=0
-    k=0
-    while len(s.team_combos)>0:
-        t = ScheduleTree(s)
-        for i in range(iterations):
-            c+=1
-            k+=1
-            iterations_counter[0] = c
-            if isscheduling==[False]:
-                return
-            if t.run()=="no_possible":
-                s.team_combos.pop(0)
-                c = k*iterations
-                break
-        else:
-            s = t.ranked()[0]
-    buffer[name] = s
+    DEBUG_s = copy(s)
+    ret = s.generate_schedule(int(iterations),iterations_counter)
+
+
+    buffer[name] = ret
+    print("score:",ret.score())
 
     iterations_counter[0] = 0
     isscheduling[0] = False

@@ -21,7 +21,7 @@ with open("data.pickle","rb") as f:
     d = pickle.load(f)
     teams :Dict[str,Team] = d["teams"]
     divisions = d["divisions"]
-    facilities = d["facilities"]
+    facilities :Dict[str,Facility]= d["facilities"]
 pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities}
 
 @app.route("/submitnewteam",methods=["POST"])
@@ -76,6 +76,10 @@ def submit_edit_page():
 
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
+        for facility in facilities:
+            for i in range(len(facilities[facility].allowedTeams)):
+                if facilities[facility].allowedTeams.value[i]==name:
+                    facilities[facility].allowedTeams.value[i] = request.form["fullName"]
         teams.pop(request.form["teamname"])
         teams[t.fullName.value] = t
         return render_template("submiteditteam.html",data=t.properties)
@@ -230,16 +234,18 @@ def delete_facility():
 def generate_schedule_page():
     global isscheduling
     global cap_iterations
-    global schedules_dict
+    global  schedules_dict
     global iterations_counter
 
     if 'iterations' in request.form:
-        teamsindiv = [teams[x] for x in teams if teams[x].division.value==request.form["division"]]
-        cap_iterations = int(request.form["iterations"])*teamsindiv
-        threading.Thread(target=generate_schedule, args=(request.form["name"],divisions[request.form["division"]], int(request.form["iterations"]), teams, facilities, isscheduling, iterations_counter, schedules_dict)).start()
+        teamsindiv = {x:teams[x] for x in teams if teams[x].division.value==request.form["division"]}
+        if len(teamsindiv)<2:
+            return "please add more than 1 teams to the division"
+        cap_iterations = len(teamsindiv)* int(request.form["iterations"])
+        threading.Thread(target=generate_schedule, args=(request.form["name"],divisions[request.form["division"]], int(request.form["iterations"]), teamsindiv, facilities, isscheduling, iterations_counter, schedules_dict)).start()
 
 
-        return render_template("loadingscreen.html",iters=iterations_counter[0],maxiters=teamsindiv,name=request.form["name"])
+        return render_template("loadingscreen.html",iters=iterations_counter[0],maxiters=cap_iterations,name=request.form["name"])
 
     return render_template("generateschedule.html", divisions=divisions)
 @app.route("/loadingscreenpost",methods=["POST"])
@@ -259,7 +265,7 @@ def cancel_scheduler():
 @app.route("/editschedule",methods=["GET","POST"])
 def edit_schedules():
     global schedules_dict
-
+    print(schedules_dict)
     schedu:Schedule=  schedules_dict[request.args["schedule"]]
     print(schedu)
     print(schedu.games_in_table_order())
@@ -273,3 +279,9 @@ def debug_pickle():
 t = threading.Thread(target=debug_pickle)
 t.start()
 app.run()
+#TODO:
+# 1: whole league, all matches, all divisions
+# 2: by division
+# 3: by facility
+# things that could change:
+# practice days

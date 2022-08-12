@@ -72,7 +72,7 @@
                     x = parseInt(dom.value);
                     var n = document.createElement("input");
                     var m = document.getElementById("here");
-                    m.innerHTML +=`<select name="team-`+x+`">
+                    m.innerHTML +=`<select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-`+x+`">
                                <option value="$none">None</option>
                     {% for team in teams %}
                 <option value="{{team}}">{{teams[team].shortName}}</option>

@@ -7,15 +7,8 @@
     <script>
 
        function get(){
-        const http = new XMLHttpRequest()
-        http.open("POST", "/loadingscreenpost")
-         http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        http.send("name={{name}}")
-                function onget(){
-            document.body.innerHTML = '';
-            document.write(http.responseText)
-        }
-        http.onload = onget
+            f=  document.getElementById("form")
+            f.submit()
         }
         setTimeout(get,300)
     </script>
@@ -28,5 +21,7 @@
 <h2>This page will change when it is done loading</h2>
 <form action="/cancelscheduler" method="post"><input type="submit" value="Cancel Process"></form>
 <h2>{{iters}}/{{maxiters}} completed</h2>
+
+<form action="/loadingscreenpost" method="post" id="form"><input type="hidden" value="{{name}}" name="name"></form>
 </body>
 </html>

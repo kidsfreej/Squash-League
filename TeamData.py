@@ -218,7 +218,7 @@ class Facility:
         self.shortName =  Prop("Name Abbreviation",shortName)
         self.daysCanHost = Weekdays("Days can Host Matches",daysCanHost)
         self.datesCantHost = Dates("Dates can't host (m/d/yy)",datesCantHost)
-        self.allowedTeams =Arr("Can only host matches for",allowedTeams)
+        self.allowedTeams :Arr =Arr("Can only host matches for",allowedTeams)
 
         self.properties = [self.fullName,self.shortName,self.daysCanHost,self.datesCantHost,self.allowedTeams]
         errors = []
