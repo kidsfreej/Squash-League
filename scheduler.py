@@ -144,9 +144,10 @@ class Schedule:
             for team2 in self.teams:
                 if self.teams[team1]!=self.teams[team2] and (self.teams[team2],self.teams[team1]) not in combos:
                     combos.append((self.teams[team1],self.teams[team2]))
-                    for game in self.games_by_team[team1]:
-                        if game.rteam2.fullName == team2:
-                            d[y][x] = game
+                    if team1 in self.games_by_team:
+                        for game in self.games_by_team[team1]:
+                            if game.rteam2.fullName == team2:
+                                d[y][x] = game
                 x += 1
             y += 1
             x = 0
@@ -248,9 +249,11 @@ class Schedule:
             print("total score:",score)
         return score
     def game_by_team_combo(self,combo):
-        for g in self.games_by_team[combo[0].fullName]:
-            if g.rteam1 in combo and g.rteam2 in combo:
-                return g
+        if combo[0].fullName in self.games_by_team:
+            for g in self.games_by_team[combo[0].fullName]:
+                if g.rteam1 in combo and g.rteam2 in combo:
+                    return g
+        return None
     def find_best(self,iters):
         schedules = []
         for i in range(iters):
