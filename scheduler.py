@@ -3,7 +3,7 @@ from copy import copy,deepcopy
 import datetime
 import pickle
 import bisect
-
+import math
 
 from typing import List, Dict
 
@@ -22,6 +22,7 @@ facilities = {}
 rawTeams = {}
 rawFacilities={}
 rawDivisions={}
+
 class RawDivision:
 
     def __init__(self, division:Division):
@@ -316,7 +317,9 @@ class Schedule:
         return c
     def __repr__(self):
         return f"<Schedule: {[self.games[date] for date in self.games if len(self.games[date])>0]}>"
+
     def generate_schedule(self,iterations,iterations_counter):
+        magic_sauce =lambda x:math.pow(1/2,x/int(iterations))/2
         current = self.sudoku()
         best_sched = copy(current)
         best_score = current.score()
@@ -330,7 +333,7 @@ class Schedule:
                 c.team_combos.insert(0,combo)
                 bisect.insort(l,ScoredSchedule(c),key=lambda x:x.score)
 
-            last_half = l[:len(l)//3]
+            last_half = l[:math.ceil(len(l)*magic_sauce)]
             for scored_sched in last_half:
                 combo = current.game_by_team_combo(scored_sched.schedule.team_combos[0])
                 if combo:
