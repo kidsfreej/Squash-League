@@ -333,7 +333,8 @@ class Schedule:
                 c.team_combos.insert(0,combo)
                 bisect.insort(l,ScoredSchedule(c),key=lambda x:x.score)
 
-            last_half = l[:math.ceil(magic_sauce(len(l)))]
+            last_half = l[:math.ceil(magic_sauce(i)*len(l))]
+            print(math.ceil(magic_sauce(len(l))))
             for scored_sched in last_half:
                 combo = current.game_by_team_combo(scored_sched.schedule.team_combos[0])
                 if combo:
