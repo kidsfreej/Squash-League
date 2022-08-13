@@ -124,13 +124,16 @@ class Schedule:
             for team2 in self.teams:
                 if self.teams[team1]!=self.teams[team2] and (self.teams[team2],self.teams[team1]) not in combos:
                     combos.append((self.teams[team1],self.teams[team2]))
-                    for game in self.games_by_team[team1]:
+                    if team1 in self.games_by_team:
+                        for game in self.games_by_team[team1]:
 
-                        if game.rteam2.fullName == team2:
-                            yield (combos[-1],game)
-                            break
+                            if game.rteam2.fullName == team2:
+                                yield (combos[-1],game)
+                                break
+                        else:
+                            yield (combos[-1],None)
                     else:
-                        yield (combos[-1],None)
+                        yield (combos[-1], None)
 
     def games_in_table_order(self):
         d = [[None for x in range(len(self.teams))] for x in range(len(self.teams))]
