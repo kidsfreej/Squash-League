@@ -1,14 +1,15 @@
+
+from __future__ import annotations
 import time
-
+import urllib.parse
 import flask
-
+from markupsafe import Markup
 
 from flask import Flask
 from flask import send_from_directory
 from flask import render_template
 from flask import request
 import threading
-
 import montecarlo
 from database import Database
 import pickle
@@ -23,7 +24,65 @@ with open("data.pickle","rb") as f:
     divisions = d["divisions"]
     facilities :Dict[str,Facility]= d["facilities"]
 pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities}
+def change_team(old_name,new_team:Team):
+    for fac_name in facilities:
+        if old_name in facilities[fac_name].allowedTeams.value and old_name != new_team.fullName.value:
+            facilities[fac_name].allowedTeams.value.remove(old_name)
+            facilities[fac_name].allowedTeams.value.append(new_team.fullName.value)
+            ch
+    for sched in schedules_dict:
+        schedule = schedules_dict[sched]
+        if old_name in schedule.teams:
+            schedule.teams.pop(old_name)
+            schedule.teams[new_team.fullName.value] = RawTeam(new_team)
+        if old_name in schedule.games_by_team:
+            schedule.games_by_team[new_team.fullName.value] = schedule.games_by_team.pop(old_name)
+            for game in schedule.games_by_team[new_team.fullName.value]:
+                if game.rteam1.fullName == old_name:
+                    game.rteam1=schedule.teams[new_team.fullName.value]
+                if game.rteam2.fullName == old_name:
+                    game.rteam2 = schedule.teams[new_team.fullName.value]
+        if old_name in schedule.team_home_plays:
+            schedule.team_home_plays[new_team.fullName.value]=schedule.team_home_plays.pop(old_name)
+        if old_name in schedule.team_away_plays:
+            schedule.team_away_plays[new_team.fullName.value]=schedule.team_away_plays.pop(old_name)
+def change_facility(old_name,new_facilitiy:Facility):
+    for team in teams:
+        either = False
+        if teams[team].homeFacility.value==old_name:
+            teams[team].homeFacility.value=  new_facilitiy.fullName.value
+            either = True
+        if teams[team].alternateFacility.value==old_name:
+            teams[team].alternateFacility.value=  new_facilitiy.fullName.value
+            either = True
+        if either:
+            change_team(team,teams[team])
+    for sched in schedules_dict:
+        schedule = schedules_dict[sched]
+        if old_name in schedule.facilities:
+            schedule.facilities.pop(old_name)
+            schedule.facilities[new_facilitiy.fullName.value] = RawFacility(new_facilitiy)
+        for date in schedule.games:
+            for game in schedule.games[date]:
+                if game.rfacility.fullName == old_name:
+                    game.rfacility.fullName = new_facilitiy.fullName.value
 
+def change_division(old_name,new_division:Division):
+    for team in teams:
+        if teams[team].division.value == old_name:
+            teams[team].division.value= new_division.fullName.value
+            change_team(team,teams[team])
+    for sched in schedules_dict:
+        schedule : Schedule = schedules_dict[sched]
+        if schedule.division.fullName == old_name:
+            schedule.division = RawDivision(new_division)
+@app.template_filter('urlencode')
+def urlencode_filter(s):
+    if type(s) == 'Markup':
+        s = s.unescape()
+    s = s.encode('utf8')
+    s = urllib.parse.quote_plus(s)
+    return Markup(s)
 @app.route("/submitnewteam",methods=["POST"])
 def add_new_team():
 
@@ -82,6 +141,8 @@ def submit_edit_page():
                     facilities[facility].allowedTeams.value[i] = request.form["fullName"]
         teams.pop(request.form["teamname"])
         teams[t.fullName.value] = t
+        change_team(request.form["teamname"],t)
+
         return render_template("submiteditteam.html",data=t.properties)
 
     return "Ok  this should neve everr happen. "
@@ -117,8 +178,8 @@ def edit_division():
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Division does not exit!"
         divisions.pop(request.form["delete"])
         for team in teams:
-            if team.division.value == request.form["delete"]:
-                team.division.value = None
+            if teams[team].division.value == request.form["delete"]:
+                teams[team].division.value = None
         return render_template("selectdivisionedit.html", teams=divisions)
     arg = request.args.get("division")
     if arg==None:
@@ -162,7 +223,7 @@ def add_new_facility():
 
     return render_template("submitnewfacility.html",data=t.properties)
 
-@app.route("/editfacilities")
+@app.route("/editfacilities",methods=["GET","POST"])
 def edit_facilities():
 
     if request.method=="POST":
@@ -170,10 +231,10 @@ def edit_facilities():
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
         facilities.pop(request.form["delete"])
         for team in teams:
-            if team.homeFacility.value == request.form["delete"]:
-                team.homeFacility.value = None
-            if team.alternateFacility.value == request.form["delete"]:
-                team.alternateFacility.value = None
+            if teams[team].homeFacility.value == request.form["delete"]:
+                teams[team].homeFacility.value = None
+            if teams[team].alternateFacility.value == request.form["delete"]:
+                teams[team].alternateFacility.value = None
         return render_template("selectfacilityedit.html", teams=facilities)
     arg = request.args.get("facility")
     if arg==None:
@@ -202,6 +263,7 @@ def submit_edit_facility():
             return render_template("submitnewteam_fail.html", errors=t.errors)
         facilities.pop(name)
         facilities[t.fullName.value] = t
+        change_facility(name,t)
         # db.remove_team(name)
         # db.add_team(t)
         return  render_template("submiteditfacility.html", data=t.properties)
@@ -218,6 +280,8 @@ def submit_edit_division():
             return render_template("submitnewteam_fail.html", errors=t.errors)
         divisions.pop(name)
         divisions[t.fullName.value] = t
+
+        change_division(name,t)
         # db.remove_team(name)
         # db.add_team(t)
         return render_template("submiteditdivision.html", data=t.properties)
@@ -241,7 +305,7 @@ def generate_schedule_page():
         teamsindiv = {x:teams[x] for x in teams if teams[x].division.value==request.form["division"]}
         if len(teamsindiv)<2:
             return "please add more than 1 teams to the division"
-        cap_iterations = len(teamsindiv)* int(request.form["iterations"])
+        cap_iterations = int(request.form["iterations"])
         threading.Thread(target=generate_schedule, args=(request.form["name"],divisions[request.form["division"]], int(request.form["iterations"]), teamsindiv, facilities, isscheduling, iterations_counter, schedules_dict)).start()
 
 
@@ -255,27 +319,51 @@ def loading_screen():
     global schedules_dict
     global iterations_counter
     if request.form["name"] in schedules_dict:
-        return flask.redirect("/editschedule?schedule="+request.form["name"])
+        print(request.form["name"])
+        print(request.form["name"])
+        print(request.form["name"])
+        return flask.redirect("/viewschedules?schedule="+(request.form["name"]))
     return render_template("loadingscreen.html", iters=iterations_counter[0], maxiters=cap_iterations,name=request.form["name"])
 @app.route("/cancelscheduler",methods=["POST"])
 def cancel_scheduler():
     global isscheduling
     isscheduling[0] = False
     return flask.redirect("/")
-@app.route("/editschedule",methods=["GET","POST"])
-def edit_schedules():
+@app.route("/viewschedules",methods=["GET","POST"])
+def view_schedules():
     global schedules_dict
-    print(schedules_dict)
-    schedu:Schedule=  schedules_dict[request.args["schedule"]]
-    print(schedu)
-    print(schedu.games_in_table_order())
-    return render_template("scheduledisplay.html",teams=list(schedu.teams.values()),scheduleArr=schedu.games_in_table_order())
+    if "schedule" in request.args:
+        schedu:Schedule=  schedules_dict[request.args["schedule"]]
+        return render_template("scheduledisplay.html",teams=list(schedu.teams.values()),scheduleArr=schedu.games_in_table_order(),name=request.args["schedule"])
+    return render_template("viewschedules.html",schedules=schedules_dict)
+
+
+@app.route("/downloadschedule")
+def download_schedule():
+    if "schedule" in request.args:
+        try:
+            schedu:Schedule=  schedules_dict[request.args["schedule"].split(".")[0]]
+        except:
+            return "Invalid url"
+        data = schedu.as_csv()
+        return flask.Response(data,
+                       mimetype="text/plain",
+                       headers={"Content-Disposition":
+                                    f"attachment;filename={request.args['schedule']}"})
+
+    return "No schedule"
+@app.route("/downloadbyfacility")
+def download_by_facility():
+    global schedules_dict
+    facility_arr = []
+    for sched in schedules_dict:
+        facility_arr+=list(schedules_dict[sched].facilities.keys())
+
 def debug_pickle():
     while True:
         time.sleep(5)
         with open("data.pickle","wb") as f:
             pickle.dump(pickle_data,f)
-# @app.route("")
 t = threading.Thread(target=debug_pickle)
 t.start()
 app.run(port=8080)
