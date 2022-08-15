@@ -221,7 +221,7 @@ class Schedule:
         game_counter = 0
         for team in self.team_home_plays:
             if self.team_home_plays[team]+self.team_away_plays[team]!=0:
-                score+=abs(self.team_home_plays[team]*100/(self.team_home_plays[team]+self.team_away_plays[team]) - self.teams[team].homeMatchPCT)
+                score+=abs(self.team_home_plays[team]*100/(self.team_home_plays[team]+self.team_away_plays[team]) - self.teams[team].homeMatchPCT)*10
         if not mute:
             print("by home play pct:",score)
 
@@ -347,6 +347,7 @@ class Schedule:
                 print("here:",i,"score:",cur_score)
                 best_score=cur_score
                 best_sched = copy(current)
+                best_sched.score(False)
         return best_sched
 
 # class SwapSchedule(Schedule):

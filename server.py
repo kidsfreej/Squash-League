@@ -278,7 +278,7 @@ def debug_pickle():
 # @app.route("")
 t = threading.Thread(target=debug_pickle)
 t.start()
-app.run()
+app.run(port=8080)
 #TODO:
 # 1: whole league, all matches, all divisions
 # 2: by division
