@@ -377,8 +377,9 @@ class Schedule:
                 return
             iterations_counter[self.name] = i + 1
             l: List[ScoredSchedule] = []
-            for combo, game in zip(combos_to_change,games_to_change):
+            for combo, _ in zip(combos_to_change,games_to_change):
                 c = copy(current)
+                game = c.game_by_team_combo(combo)
                 if game:
                     c.remove_game(game)
                 c.team_combos.insert(0, combo)
