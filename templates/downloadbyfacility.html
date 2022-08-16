@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>    <link rel = "icon" href = 
+    "static/images/logo.jpg" 
+            type = "image/x-icon">
     <meta charset="UTF-8">
-    <title>Download by Facility</title>
+    <title>Fairwest Match Scheduler - Download by Facility</title>
 </head>
 <body>
 <a href="/">Home</a>
@@ -10,5 +12,6 @@
 {% for facility in facilities %}
      <span style="font-size:30px"><a href="/downloadschedule?facility={{facility}}.csv">{{facility}}</a></span><br><br>
 {% endfor %}
+
 </body>
 </html>

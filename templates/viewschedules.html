@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>    <link rel = "icon" href = 
+    "static/images/logo.jpg" 
+            type = "image/x-icon">
   <meta charset="UTF-8">
-  <title>View Schedules</title>
+  <title>Fairwest Match Scheduler - View Schedules</title>
 </head>
 <body>
 <a href="/">Home</a>
 <h1>VIEW SCHEDULES</h1>
-<a href="/downloadbyfacility">Download by facility</a><br>
+  <h2>TO EDIT SCHEDULE</h2>
+
+    <ol>
+      <li>Edit facility or team</li>
+      <li>Go to back to this page</li>
+      <li>Press the update button under the schedule of choice</li>
+    </ol>
+<a href="/downloadbyfacility" style="font-size:30px">Download CSV for facilities</a><br><br><br>
     {%for name in schedules %}
     {% set sched = schedules[name] %}
   <span style="font-size:30px">{{name}}</span><br>
@@ -18,6 +27,7 @@
    <a href="/deleteschedule?schedule={{name}}">Delete {{name}}</a><br>
 <a href="/downloadschedule?schedule={{name}}.csv">Download as csv</a><br><br>
     {%endfor%}
+
 
 </body>
 </html>

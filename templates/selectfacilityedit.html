@@ -1,13 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>    <link rel = "icon" href = 
+    "static/images/logo.jpg" 
+            type = "image/x-icon">
     <meta charset="UTF-8">
-    <title>Squash League - Edit Facility</title>
+    <title>Fairwest Match Scheduler - Edit Facility</title>
 </head>
 <body>
   <a href="/">Home</a>
   <h1>EDIT FACILITES</h1>
-  <h2>WARNING: EDITING WILL NOT CHANGE THE SCHEDULE. IF YOU WANT TO MAKE A CHANGE ANY DATE USE THE OTHER TOOL FOR THAT.</h2>
+    <h2>TO EDIT SCHEDULE</h2>
+
+    <ol>
+      <li>Edit facility on this page</li>
+      <li>Go to "VIEW, UPDATE, AND DOWNLOAD SCHEDULES"</li>
+      <li>Press the update button under the schedule of choice</li>
+    </ol>
     {%for name in teams %}
     {% set team = teams[name] %}
   <span style="font-size:30px">{{name}}</span><br>
@@ -18,6 +26,7 @@
   <a href="/editfacilities?facility={{team.fullName}}">Edit {{name}}</a><br>
    <a href="/deletefacility?facility={{team.fullName}}">Delete {{name}}</a><br>
     {%endfor%}
+
 
 
 

@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>    <link rel = "icon" href = 
+    "static/images/logo.jpg" 
+            type = "image/x-icon">
     <meta charset="UTF-8">
-    <title>Squash League - Delete Team Confirmation</title>
+    <title>Fairwest Match Scheduler - Delete Team Confirmation</title>
 </head>
 <body>
 <a href="/">Home</a>
 <h1>Are you sure you want to DELETE {{name}}?</h1>
 <h2>This action is irreversible</h2>
 <span style="font-size:30px"><form method="post" action="/edit"><input value="Yes, I want to delete {{name}}" type="submit"><input type="hidden" value="{{name}}" name="delete"></form></span>
+
 </body>
 </html>
