@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fairwest Match Scheduler - Settings</title>
+          <style>
+        label{
+            display: inline-block;
+            float: left;
+            clear: left;
+            width: 500px;
+            text-align: left;
+        }
+        input {
+          display: inline-block;
+          float: left;
+        }select {
+          display: inline-block;
+          float: left;
+        }
+    </style>
+</head>
+<body>
+<a href="/">Home</a><br>
+    <form method="post" action="/leaguesettings">
+        <label>League wide no play dates (mm/dd/yy,mm/dd/yy-mm/dd/yy...etc)</label><input type="text" name="noPlayDates" value="{{noPlayDate}}"><br>
+        <input type="submit">
+    </form>
+</body>
+</html>

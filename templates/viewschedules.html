@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>View Schedules</title>
+</head>
+<body>
+<a href="/">Home</a>
+<h1>VIEW SCHEDULES</h1>
+<a href="/downloadbyfacility">Download by facility</a><br>
+    {%for name in schedules %}
+    {% set sched = schedules[name] %}
+  <span style="font-size:30px">{{name}}</span><br>
+  <span style="font-size:15px">Creation Date: {{sched.creationDate}}</span><br>
+        <br>
+  <a href="/viewschedules?schedule={{name}}">View {{name}}</a><br>
+  <a href="/updateschedule?schedule={{name}}">Update {{name}}</a><br>
+   <a href="/deleteschedule?schedule={{name}}">Delete {{name}}</a><br>
+<a href="/downloadschedule?schedule={{name}}.csv">Download as csv</a><br><br>
+    {%endfor%}
+
+</body>
+</html>

@@ -1,10 +1,11 @@
+from __future__ import annotations
 import random
 from copy import copy,deepcopy
 import datetime
 import pickle
 import bisect
 import math
-
+import matplotlib.pyplot as plt
 from typing import List, Dict
 
 from TeamData import *
@@ -69,20 +70,23 @@ class RawTeam:
         return self.fullName != other.fullName
     def __repr__(self):
         return f"<Raw: {self.fullName}>"
+    def __hash__(self):
+        return hash(self.fullName)
 class Game:
-    def __init__(self, date:datetime.datetime, team1:RawTeam, team2:RawTeam, rfacility:RawFacility):
+    def __init__(self, date:datetime.datetime, team1:RawTeam, team2:RawTeam, rfacility:RawFacility,sched_name):
         self.date = date
         self.rteam1 = team1
         self.rteam2 = team2
+        self.sched_name = sched_name
         self.rfacility :RawFacility= rfacility
     def __repr__(self):
         return f"<{Weekday.weekdays[self.date.weekday()]} {self.date} {self.rteam1.fullName} vs {self.rteam2.fullName} at {self.rfacility.fullName}>"
     def __eq__(self, other):
-        return self.date ==other.date and self.rteam1 == other.rteam1 and self.rteam2==other.rteam2
+        return self.date ==other.date and self.rteam1.fullName == other.rteam1.fullName and self.rteam2.fullName==other.rteam2.fullName and self.rfacility.fullName==other.rfacility.fullName
     def __ne__(self, other):
         return not (self==other)
     def __deepcopy__(self, memodict={}):
-        c = Game(self.date,self.rteam1,self.rteam2,self.rfacility)
+        c = Game(self.date,self.rteam1,self.rteam2,self.rfacility,self.sched_name)
         return c
     def html_display(self):
         return f"{Weekday.weekdays[self.date.weekday()].capitalize()}, {str(self.date.month)+'/'+str(self.date.day)+'/'+str(self.date.year)}   @ {self.rfacility.fullName}"
@@ -95,10 +99,17 @@ class ScoredSchedule:
         return f"\n<{self.score}\n{self.schedule}>"
 
 
+
 class Schedule:
-    def __init__(self,division:RawDivision,teams:Dict[str,RawTeam],facilities:Dict[str,RawFacility]):
+    league_wide_no_play_dates = set()
+    str_league_wide_no_play_dates:str = ""
+    games_occupied_by_facility: Dict[str, dict[datetime.datetime,Game]] = {}
+    update_iterations_counter  : Dict[str,int]={}
+    is_updating:set[str] = set()
+    def __init__(self,division:RawDivision,teams:Dict[str,RawTeam],facilities:Dict[str,RawFacility],name):
         if division is None:
             return
+        self.name = name
         self.facilities = facilities
         self.division = division
         self.games:Dict[datetime.datetime,List[Game]] = {}
@@ -143,17 +154,24 @@ class Schedule:
         combos = []
         for team1 in self.teams:
             for team2 in self.teams:
-                if self.teams[team1]!=self.teams[team2] and (self.teams[team2],self.teams[team1]) not in combos:
-                    combos.append((self.teams[team1],self.teams[team2]))
+                if self.teams[team1]!=self.teams[team2]:
                     if team1 in self.games_by_team:
                         for game in self.games_by_team[team1]:
                             if game.rteam2.fullName == team2:
                                 d[y][x] = game
+                                d[x][y]=game
                 x += 1
             y += 1
             x = 0
 
         return d
+    def as_csv(self):
+        ordered= list(self.teams.keys())
+        s= ","+",".join(ordered)
+        d = self.games_in_table_order()
+        for y in range(len(d)):
+            s+="\n"+ordered[y]+","+",".join(list(map(lambda x: x.html_display() if x is not None else "-",d[y])))
+        return s
     def add_game(self,game:Game):
         if game.date not in self.games:
             self.games[game.date] = [game]
@@ -228,7 +246,7 @@ class Schedule:
         temp_score=0
         for date in self.games:
             for game in self.games[date]:
-                if game.rfacility.fullName!= game.rteam1.alternateFacility or game.rfacility.fullName != game.rteam2.alternateFacility:
+                if (game.rfacility.fullName!= game.rteam1.alternateFacility and game.rteam1.alternateFacility!= None ) and (game.rfacility.fullName != game.rteam2.alternateFacility and game.rteam1.alternateFacility!= None):
                     temp_score+=100
                 game_counter+=1
         if not mute:
@@ -284,26 +302,124 @@ class Schedule:
         possible_games  = []
         for date in self.division.dates:
             if date > team1.startDate and date>team2.startDate:
-                if date not in team1.noPlayDates and date not in team2.noPlayDates:
+                if date not in team1.noPlayDates and date not in team2.noPlayDates and date not in Schedule.league_wide_no_play_dates:
                     weekday = date.weekday()
                     if weekday not in team1.practiceDays and weekday not in team2.practiceDays:
 
 
                         for facility in self.facilities:
-                            if team1.fullName in self.facilities[facility].allowedTeams and team2.fullName in self.facilities[facility].allowedTeams:
-                                if weekday in self.facilities[facility].daysCanHost:
-                                    if date not in self.facilities[facility].datesCantHost:
-                                        if date in self.games:
-                                            for game in self.games[date]:
-                                                if game.rteam1.fullName ==  team1.fullName or game.rteam2.fullName == team2.fullName or game.rfacility.fullName==facility:
-                                                    break
-                                            else:
-                                                possible_games.append(Game(date, team1, team2, self.facilities[facility]))
-                                        else:
-                                            possible_games.append(Game(date,team1,team2,self.facilities[facility]))
+
+                            if team1.homeMatchPCT >99 and team1.homeFacility!=facility or team2.homeMatchPCT>99 and team2.homeFacility!=facility:
+                                continue
+                            if facility in Schedule.games_occupied_by_facility and date in Schedule.games_occupied_by_facility[facility]:
+                                continue
+                            if not(len(self.facilities[facility].allowedTeams)==0 or team1.fullName in self.facilities[facility].allowedTeams or team2.fullName in self.facilities[facility].allowedTeams):
+                                continue
+                            if weekday not in self.facilities[facility].daysCanHost:
+                                continue
+                            if date in self.facilities[facility].datesCantHost:
+                                continue
+                            if date in self.games:
+                                for game in self.games[date]:
+                                    if game.rteam1.fullName ==  team1.fullName or game.rteam2.fullName == team2.fullName or game.rfacility.fullName==facility:
+                                        break
+                                else:
+                                    possible_games.append(Game(date, team1, team2, self.facilities[facility],self.name))
+                            else:
+                                possible_games.append(Game(date,team1,team2,self.facilities[facility],self.name))
         return possible_games
+    def valid(self,game:Game):
+        if game.date > game.rteam1.startDate and game.date> game.rteam2.startDate:
+            if game.date not in game.rteam1.noPlayDates and game.date not in game.rteam2.noPlayDates and game.date not in Schedule.league_wide_no_play_dates:
+                weekday = game.date.weekday()
+                if weekday not in game.rteam1.practiceDays and weekday not in game.rteam2.practiceDays:
+                    if game.rfacility.fullName in Schedule.games_occupied_by_facility and game.date in Schedule.games_occupied_by_facility[game.rfacility.fullName] and Schedule.games_occupied_by_facility[game.rfacility.fullName][game.date].sched_name!=self.name:
+                        return False
+                    if game.rteam1.homeMatchPCT >99 and game.rteam1.homeFacility!=game.rfacility.fullName or game.rteam2.homeMatchPCT>99 and game.rteam2.homeFacility!=game.rfacility.fullName:
+                        return False
+                    if not(len(self.facilities[game.rfacility.fullName].allowedTeams)==0 or game.rteam1.fullName in self.facilities[game.rfacility.fullName].allowedTeams or game.rteam2.fullName in self.facilities[game.rfacility.fullName].allowedTeams):
+                        return False
+                    if weekday not in self.facilities[game.rfacility.fullName].daysCanHost:
+                        return False
+                    if game.date in self.facilities[game.rfacility.fullName].datesCantHost:
+                        return False
+                    if game.date in self.games:
+                        for og in self.games[game.date]:
+                            if (game.rteam1.fullName ==  og.rteam1.fullName or game.rteam2.fullName == og.rteam2.fullName or game.rfacility.fullName==og.rfacility.fullName) and og!=game:
+                                return False
+                        else:
+                            return True
+                    else:
+                        return True
+        return False
+    def update_schedule(self,iterations,iterations_counter,isscheduling):
+        games_to_change=[]
+        combos_to_change= []
+        for combo, game in self.games_by_combo():
+            if game is None or not  self.valid(game):
+                combos_to_change.append(combo)
+                games_to_change.append(game)
+        if len(combos_to_change)==0:
+            return copy(self)
+        current = copy(self)
+        for combo,game in zip(combos_to_change,games_to_change):
+            if game:
+                current.remove_game(game)
+            current.team_combos.append(combo)
+        current= current.sudoku()
+        visits_by_combo = {}
+        for combo, game in current.games_by_combo():
+            visits_by_combo[combo]=0
+        best_sched = copy(current)
+        best_score = current.score()
+        for i in range(iterations):
+            if self.name not in isscheduling:
+                return
+            iterations_counter[self.name] = i + 1
+            l: List[ScoredSchedule] = []
+            for combo, game in zip(combos_to_change,games_to_change):
+                c = copy(current)
+                if game:
+                    c.remove_game(game)
+                c.team_combos.insert(0, combo)
+                l.append(ScoredSchedule(c))
+            ordered = sorted(l, key=lambda x: x.score)
+
+            index = 0
+            while visits_by_combo[ordered[index].schedule.team_combos[0]] / (
+                    i + 1) > 1/len(ordered) * 2:
+                index += 1
+
+            to_remove = [ordered[index]]
+
+            for scored_sched in to_remove:
+
+                combo = current.game_by_team_combo(scored_sched.schedule.team_combos[0])
+                visits_by_combo[scored_sched.schedule.team_combos[0]] += 1
+                if combo:
+                    current.remove_game(combo)
+                current.team_combos.append(scored_sched.schedule.team_combos[0])
+            current = current.sudoku()
+            cur_score = current.score()
+            if cur_score < best_score:
+                best_score = cur_score
+                best_sched = copy(current)
+
+        print("FINAL SCORE:")
+        best_sched.score(False)
+
+        for game in games_to_change:
+            if game:
+                Schedule.games_occupied_by_facility[game.rfacility.fullName].pop(game.date)
+        for combo,game in best_sched.games_by_combo():
+            if combo in combos_to_change and game:
+                if game.rfacility.fullName not in Schedule.games_occupied_by_facility:
+                    Schedule.games_occupied_by_facility[game.rfacility.fullName]={}
+                Schedule.games_occupied_by_facility[game.rfacility.fullName][game.date] = game
+        return best_sched
     def __copy__(self):
-        c = Schedule(None,None,None)
+        c = Schedule(None,None,None,None)
+        c.name = self.name
         c.division = self.division
         c.team_combos = deepcopy(self.team_combos)
         c.team_home_plays = deepcopy(self.team_home_plays)
@@ -318,36 +434,66 @@ class Schedule:
     def __repr__(self):
         return f"<Schedule: {[self.games[date] for date in self.games if len(self.games[date])>0]}>"
 
-    def generate_schedule(self,iterations,iterations_counter):
-        magic_sauce =lambda x:math.pow(1/2,x/int(iterations))/2
-        current = self.sudoku()
+    def generate_schedule(self,iterations,iterations_counter,isscheduling,name):
+        DEBUG_scores = []
+
+        visits_by_combo  ={}
+
+        current :Schedule= self.sudoku()
+        for combo, game in current.games_by_combo():
+            visits_by_combo[combo]=0
+
         best_sched = copy(current)
         best_score = current.score()
         for i in range(iterations):
-            iterations_counter[0]=i+1
+            if name not in isscheduling:
+                return
+            iterations_counter[name]=i+1
             l :List[ScoredSchedule]= []
             for combo,game in current.games_by_combo():
                 c = copy(current)
                 if game:
                     c.remove_game(game)
                 c.team_combos.insert(0,combo)
-                bisect.insort(l,ScoredSchedule(c),key=lambda x:x.score)
+                l.append(ScoredSchedule(c))
+            ordered = sorted(l,key=lambda x:x.score)
 
-            last_half = l[:math.ceil(magic_sauce(i)*len(l))]
-            print(math.ceil(magic_sauce(len(l))))
-            for scored_sched in last_half:
+            index = 0
+            while visits_by_combo[ordered[index].schedule.team_combos[0]]/(i+1)>1/current.max_games*1.5:
+                index+=1
+
+            to_remove = [ordered[index]]
+
+
+            for scored_sched in to_remove:
+
                 combo = current.game_by_team_combo(scored_sched.schedule.team_combos[0])
+                visits_by_combo[scored_sched.schedule.team_combos[0]]+=1
                 if combo:
                     current.remove_game(combo)
                 current.team_combos.append(scored_sched.schedule.team_combos[0])
             current = current.sudoku()
             cur_score=current.score()
-
+            DEBUG_scores.append(cur_score)
             if cur_score<best_score:
                 print("here:",i,"score:",cur_score)
                 best_score=cur_score
                 best_sched = copy(current)
-                best_sched.score(False)
+        print("FINAL SCORE:")
+        best_sched.score(False)
+        # print()
+        # print()
+        # print()
+        if name=="saveme":
+            for i in range(5):
+                plt.plot(list(range(len(DEBUG_scores))),DEBUG_scores)
+                plt.savefig(f"images/{name}.png")
+
+        for date in best_sched.games:
+            for g in best_sched.games[date]:
+                if g.rfacility.fullName not in Schedule.games_occupied_by_facility:
+                    Schedule.games_occupied_by_facility[g.rfacility.fullName] = {}
+                Schedule.games_occupied_by_facility[g.rfacility.fullName][date]=g
         return best_sched
 
 # class SwapSchedule(Schedule):

@@ -75,36 +75,33 @@ class ScheduleNode:
         self.children.append(ScheduleNode(self.tree,c,self))
 schedules_dict :Dict[str,Schedule]= {}
 
-isscheduling = [False]
-iterations_counter =[0]
-cap_iterations = 0
-def generate_schedule(name,division:Division,iterations,teams:Dict[str,Team],facilities:Dict[str,Facility],isscheduling,iterations_counter,buffer:Dict[str,Schedule]):
+isscheduling:set = set()
+isupdating = [False]
+iterations_counter ={}
+cap_iterations = {}
+def generate_schedule(name,division:Division,iterations,teams:Dict[str,Team],facilities:Dict[str,Facility],isscheduling:set,iterations_counter,buffer:Dict[str,Schedule],isupdating):
+    isupdating = False
+    isscheduling.add(name)
+    iterations_counter[name]=0
 
-    isscheduling[0]=True
-
-
-    s = Schedule(RawDivision(division),{x.fullName.value:RawTeam(x) for x in teams.values() if x.division.value==division.fullName.value},{x.fullName.value:RawFacility(x) for x in facilities.values()})
+    s = Schedule(RawDivision(division),{x.fullName.value:RawTeam(x) for x in teams.values() if x.division.value==division.fullName.value},{x.fullName.value:RawFacility(x) for x in facilities.values()},name)
     DEBUG_s = copy(s)
-    ret = s.generate_schedule(int(iterations),iterations_counter)
+    ret = s.generate_schedule(int(iterations),iterations_counter,isscheduling,name)
+    if ret:
+        buffer[name] = ret
+        print("score:",ret.score())
+
+    iterations_counter[name] = 0
+    isscheduling.remove(name)
+def update_schedule(schedule:Schedule,iterations,isscheduling:set,iterations_counter,buffer:Dict[str,Schedule],isupdating):
+    isscheduling.add(schedule.name)
+    isupdating[0] = True
+    iterations_counter[schedule.name] =0
+    c=  copy(schedule)
+    c=c.update_schedule(int(iterations),iterations_counter,isscheduling)
 
 
-    buffer[name] = ret
-    print("score:",ret.score())
-
-    iterations_counter[0] = 0
-    isscheduling[0] = False
-# ateam = rawTeams["a team"]
-# bteam = rawTeams["B TEAM"]
-#
-# div = rawDivisions["division"]
-# rawDivisions["division"]=div
-# ogschedule = Schedule(div,list(rawTeams.values()))
-# schedule =copy(ogschedule)
-# while len(schedule.team_combos)>0:
-#     t=  ScheduleTree(schedule)
-#     for i in range(100):
-#         t.run()
-#     schedule = t.ranked()[0]
-# print(schedule.games_in_table_order())
-# print(schedule)
-
+    buffer[schedule.name] = c
+    iterations_counter[schedule.name] = 0
+    isscheduling.remove(schedule.name)
+    isupdating[0] = False

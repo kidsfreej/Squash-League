@@ -35,8 +35,7 @@ td, th {
             <th>{{teams[y].fullName}}</th>
             {% for x in range(teams.__len__()) %}
                 <td>
-                    {{scheduleArr[y][x].html_display() if scheduleArr[y][x]}}
-                    {{scheduleArr[x][y].html_display() if scheduleArr[x][y]}}
+                    {{scheduleArr[y][x].html_display() if scheduleArr[y][x] else '-'}}
                 </td>
             {% endfor %}
         </tr>

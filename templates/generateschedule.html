@@ -12,7 +12,7 @@
 Scheduling uses the Monte Carlo Tree Search Algorithm which is a search algorithm to optimize some heuristic.<br>
 Iterations are very fast. The more, the better.<br><br>
 <form action="/generateschedule" method="post">
-    <label>Iterations: </label><input type="number" min="1000" max="300000" name="iterations"><br>
+    <label>Iterations: </label><input type="number" min="1" max="300000" name="iterations"><br>
         <label>Division</label>  <select name="division">
                 <option value="$none">None</option>
             {% for division in divisions %}

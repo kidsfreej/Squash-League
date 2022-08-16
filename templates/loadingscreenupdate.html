@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Generating Schedule</title>
+    <title>Updating Schedule</title>
 
     <script>
 
@@ -15,13 +15,13 @@
 </head>
 <body>
 <a href="/">Home</a>
-<h1>GENERATING SCHEDULE</h1>
+<h1>UPDATING SCHEDULE</h1>
 
 <h2>This may take a while....</h2>
 <h2>This page will change when it is done loading</h2>
-<form action="/cancelscheduler" method="post"><input type="hidden"  name="name" value="{{name}}"><input type="submit" value="Cancel Process"></form>
+<form action="/cancelupdater" method="post"><input type="hidden"  name="name" value="{{name}}"><input type="submit" value="Cancel Process"></form>
 <h2>{{iters}}/{{maxiters}} completed</h2>
 
-<form action="/loadingscreenpost" method="get" id="form"><input type="hidden" value="{{name}}" name="name"></form>
+<form action="/loadingscreenupdate" method="get" id="form"><input type="hidden" value="{{name}}" name="name"></form>
 </body>
 </html>
