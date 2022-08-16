@@ -444,13 +444,13 @@ def cancel_updater():
         isscheduling.remove()
     return flask.redirect("/")
 
-@app.route("/leaguesettings")
+@app.route("/leaguesettings",methods=["POST","GET"])
 def league_settings():
     if request.method=="GET":
         return render_template("leaguesettings.html",noPlayDates=Schedule.str_league_wide_no_play_dates)
     parsed = Dates("League Wide No Play Dates",request.form["noPlayDates"])
     if parsed.error:
-        return render_template("submitnewteam_fail.html",errors=error_messages(parsed))
+        return render_template("submitnewteam_fail.html",errors=[error_messages(parsed)])
     Schedule.str_league_wide_no_play_dates= parsed.__repr__()
     Schedule.league_wide_no_play_dates = parsed.to_set()
     return render_template("leaguesettingssuccess.html",noPlayDates=Schedule.str_league_wide_no_play_dates)
