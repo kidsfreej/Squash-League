@@ -388,7 +388,7 @@ class Schedule:
 
             index = 0
             while visits_by_combo[ordered[index].schedule.team_combos[0]] / (
-                    i + 1) > 1/len(ordered) * 2:
+                    i + 1) > 1/len(ordered) * 1.5:
                 index += 1
 
             to_remove = [ordered[index]]
