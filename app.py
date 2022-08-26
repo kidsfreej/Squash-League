@@ -591,8 +591,15 @@ def league_settings():
 #     for t in add_divisions:
 #         divisions[t.fullName.value] = t
 
+ON_HEROKU = os.environ.get('ON_HEROKU')
+
+if ON_HEROKU:
+    # get the heroku port
+    port = int(os.environ.get('PORT', 17995))  # as per OP comments default is 17995
+else:
+    port = 3000
 # t.start()
-app.run(port="8000")
+app.run(port=port)
 #TODO:
 # 1: whole league, all matches, all divisions
 # 2: by division
