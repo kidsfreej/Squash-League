@@ -490,7 +490,7 @@ class Schedule:
             current :Schedule= current.sudoku_copy()
         else:
             current = self.sudoku_copy()
-
+        print(current)
         best_sched = current
         self.master_schedule.schedules[master_schedule_index] = current
         for combo, game in current.games_by_combo_gen():
@@ -499,7 +499,6 @@ class Schedule:
 
 
         for i in range(iterations):
-
             MasterSchedule.iteration_counter+=1
             current = self.master_schedule.schedules[master_schedule_index]
             lowest_removed=None
@@ -604,7 +603,7 @@ class MasterSchedule:
 
         # #remove conflicts
         while True:
-            plt.axvline(x=len(self.schedules[0].DEBUG_iterations))
+            # plt.axvline(x=len(self.schedules[0].DEBUG_iterations))
             removes_by_divisions:Dict[str,List[tuple[RawTeam,RawTeam]]] = {}
             conflicts= self.conflicts()
             remove_counter = 0
@@ -655,8 +654,8 @@ class MasterSchedule:
 
         for sched in self.schedules:
             sched.score(False)
-            plt.plot(sched.DEBUG_iterations)
-            plt.text(len(sched.DEBUG_iterations),sched.DEBUG_iterations[-1],sched.division.fullName)
+            # plt.plot(sched.DEBUG_iterations)
+            # plt.text(len(sched.DEBUG_iterations),sched.DEBUG_iterations[-1],sched.division.fullName)
         # plt.savefig("images/epic.png")
         self.creationDate = datetime.datetime.now().strftime("%I:%M, %m/%d/%y")
         return self

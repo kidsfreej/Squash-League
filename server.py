@@ -4,28 +4,63 @@ import time
 import urllib.parse
 import flask
 from markupsafe import Markup
-
+import os.path
 from flask import Flask
 from flask import send_from_directory
 from flask import render_template
 from flask import request
 import threading
-import montecarlo
+from scheduler import *
 from database import Database
 import pickle
 import urllib.parse
-from montecarlo import *
 app = Flask(__name__)
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x:urllib.parse.quote_plus(str(x)))
 
-with open("data.pickle","rb") as f:
-    d = pickle.load(f)
-    teams :Dict[str,Team] = d["teams"]
-    divisions = d["divisions"]
-    facilities :Dict[str,Facility]= d["facilities"]
-pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities}
+teams={}
+divisions={}
+facilities={}
+if os.path.exists("data.pickle"):
+    with open("data.pickle","rb") as f:
+        d = pickle.load(f)
+        if "teams" in d:
+            teams :Dict[str,Team] = d["teams"]
+        if "divisions" in d:
+            divisions = d["divisions"]
+        if "facilities" in d:
+            facilities :Dict[str,Facility]= d["facilities"]
+        if "master_schedules" in d:
+            MasterSchedule.master_schedules = d["master_schedules"]
+def save_pickle():
+    pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,"master_schedules":MasterSchedule.master_schedules}
+    with open("data.pickle","wb") as f:
+        pickle.dump(pickle_data,f)
+
+def generate_schedule_thread(name,iterations,divisions,teams,facilities,do_update=False):
+
+    MasterSchedule.is_updating=do_update
+    MasterSchedule.is_scheduling=not do_update
+    MasterSchedule.cap_iterations=iterations
+    MasterSchedule.iteration_counter=0
+    if not do_update:
+        master = MasterSchedule(divisions, teams, facilities)
+    else:
+        master = MasterSchedule.master_schedules[name]
+
+    MasterSchedule.current_schedule= name
+
+    result = master.generate_master_schedule(iterations,do_update)
+
+
+    if result:
+        MasterSchedule.master_schedules[name] = result
+    save_pickle()
+
+    MasterSchedule.is_scheduling = False
+    MasterSchedule.is_updating = False
+
 def delete_team(old_name):
     for fac_name in facilities:
         if old_name in facilities[fac_name].allowedTeams.value:
@@ -165,9 +200,16 @@ def change_division(old_name,new_division:Division):
         if old_name in master_sched.rawDivisions:
             master_sched.rawDivisions.pop(old_name)
             master_sched.rawDivisions[new_division.fullName.value]=newraw
-        for sched in master_sched.schedules:
-            if sched.division.fullName == old_name:
-                sched.division =newraw
+        for schedule in master_sched.schedules:
+            if schedule.division.fullName == old_name:
+                schedule.division =newraw
+                for combo, game in schedule.games_by_combo_gen():
+                    if game is None:
+                        continue
+                    game.division_name = new_division.fullName.value
+                for team in schedule.games_by_team:
+                    for game in schedule.games_by_team[team]:
+                        game.division_name = new_division.fullName.value
 
 def generate_csv_facility(facility,master_sched:MasterSchedule):
     games = []
@@ -178,7 +220,7 @@ def generate_csv_facility(facility,master_sched:MasterSchedule):
                 if game.rfacility.fullName==facility:
                     games.append(game)
     games = sorted(games,key=lambda x: x.date)
-    return '\n'.join(list(map(lambda x:x.csv_display_versus_with_facility() if x else '',games)))
+    return "Date,Team 1,Team 2,Facility\n"+'\n'.join(list(map(lambda x:x.csv_display_versus_with_facility() if x else '',games)))
 
 @app.route("/submitnewteam",methods=["POST"])
 def add_new_team():
@@ -189,7 +231,7 @@ def add_new_team():
     if t.fullName.value in teams:
         return render_template("submitnewteam_fail.html",errors=[t.fullName.value+" is already a team!"])
     teams[t.fullName.value] = t
-
+    save_pickle()
 
     return render_template("submitnewteam.html",data=t.properties)
 @app.route("/newteam",methods=["GET"])
@@ -233,14 +275,11 @@ def submit_edit_page():
 
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
-        for facility in facilities:
-            for i in range(len(facilities[facility].allowedTeams)):
-                if facilities[facility].allowedTeams.value[i]==name:
-                    facilities[facility].allowedTeams.value[i] = request.form["fullName"]
+
         teams.pop(request.form["teamname"])
         teams[t.fullName.value] = t
         change_team(request.form["teamname"],t)
-
+        save_pickle()
         return render_template("submiteditteam.html",data=t.properties)
 
     return "Ok  this should neve everr happen. "
@@ -265,7 +304,7 @@ def submit_new_division():
     if t.fullName.value in divisions:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     divisions[t.fullName.value] = t
-
+    save_pickle()
     return render_template("submitnewdivision.html", data=t.properties)
 
 @app.route("/editdivision",methods=["GET","POST"])
@@ -317,7 +356,7 @@ def add_new_facility():
     if t.fullName.value in facilities:
         return render_template("submitnewteam_fail.html",errors=[t.fullName.value+" is already a facility!"])
     facilities[t.fullName.value] = t
-
+    save_pickle()
 
     return render_template("submitnewfacility.html",data=t.properties)
 
@@ -358,6 +397,7 @@ def submit_edit_facility():
         facilities.pop(name)
         facilities[t.fullName.value] = t
         change_facility(name,t)
+        save_pickle()
         # db.remove_team(name)
         # db.add_team(t)
         return  render_template("submiteditfacility.html", data=t.properties)
@@ -376,6 +416,7 @@ def submit_edit_division():
         divisions[t.fullName.value] = t
 
         change_division(name,t)
+        save_pickle()
         # db.remove_team(name)
         # db.add_team(t)
         return render_template("submiteditdivision.html", data=t.properties)
@@ -484,11 +525,7 @@ def edit_schedules():
         teamsindiv = {x:teams[x] for x in teams if teams[x].division.value==sched.division.fullName}
         return render_template("editschedule.html",teams=teamsindiv,schedname=request.args["schedule"])
 
-def debug_pickle():
-    while True:
-        time.sleep(5)
-        with open("data.pickle","wb") as f:
-            pickle.dump(pickle_data,f)
+
 @app.route("/deleteschedule",methods=["GET","POST"])
 def delete_schedule():
     if request.method=='POST':
@@ -537,7 +574,7 @@ def league_settings():
     Schedule.str_league_wide_no_play_dates= parsed.__repr__()
     Schedule.league_wide_no_play_dates = parsed.to_set()
     return render_template("leaguesettingssuccess.html",noPlayDates=Schedule.str_league_wide_no_play_dates)
-t = threading.Thread(target=debug_pickle)
+
 # for i in range(2):
 #     add_team = []
 #     add_divisions= []
