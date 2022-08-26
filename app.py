@@ -593,13 +593,14 @@ def league_settings():
 
 ON_HEROKU = os.environ.get('PORT')
 
-if ON_HEROKU:
+
+
+if __name__ == '__main__':
     print("cool epic on heroku")
+
     port = int(os.environ.get('PORT', 17995))  # as per OP comments default is 17995
-else:
-    port = 3000
-# t.start()
-app.run(port=port)
+
+    app.run(port=port)
 #TODO:
 # 1: whole league, all matches, all divisions
 # 2: by division
