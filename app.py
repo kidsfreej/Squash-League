@@ -592,7 +592,7 @@ def league_settings():
 #         divisions[t.fullName.value] = t
 
 # t.start()
-app.run(port=5000)
+app.run(port=8000)
 #TODO:
 # 1: whole league, all matches, all divisions
 # 2: by division
