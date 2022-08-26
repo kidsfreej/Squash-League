@@ -1,0 +1,5 @@
+setuptools~=65.3.0
+Cython~=0.29.32
+Flask~=2.2.2
+MarkupSafe~=2.1.1
+matplotlib~=3.5.3
