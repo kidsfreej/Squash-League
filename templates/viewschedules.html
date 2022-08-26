@@ -15,17 +15,18 @@
       <li>Edit facility or team</li>
       <li>Go to back to this page</li>
       <li>Press the update button under the schedule of choice</li>
-    </ol>
-<a href="/downloadbyfacility" style="font-size:30px">Download CSV for facilities</a><br><br><br>
+    </ol><br><br><br>
+
     {%for name in schedules %}
     {% set sched = schedules[name] %}
   <span style="font-size:30px">{{name}}</span><br>
   <span style="font-size:15px">Creation Date: {{sched.creationDate}}</span><br>
         <br>
-  <a href="/viewschedules?schedule={{name}}">View {{name}}</a><br>
-  <a href="/updateschedule?schedule={{name}}">Update {{name}}</a><br>
-   <a href="/deleteschedule?schedule={{name}}">Delete {{name}}</a><br>
-<a href="/downloadschedule?schedule={{name}}.csv">Download as csv</a><br><br>
+  <a href="/viewschedules?schedule={{urlparse(name)}}">View {{name}}</a><br>
+  <a href="/updateschedule?schedule={{urlparse(name)}}">Update {{name}}</a><br>
+   <a href="/deleteschedule?schedule={{urlparse(name)}}">Delete {{name}}</a><br>
+<a href="/downloadschedule?schedule={{urlparse(name)}}">Download as csv</a><br>
+<a href="/downloadbyfacility?schedule={{urlparse(name)}}">Download CSV for facilities</a><br><br><br>
     {%endfor%}
 
 

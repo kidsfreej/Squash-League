@@ -8,9 +8,9 @@
 </head>
 <body>
 <a href="/">Home</a>
-<h1>Download by Facility</h1>
+<h1>Download by Facility for "{{scheduleName}}"</h1>
 {% for facility in facilities %}
-     <span style="font-size:30px"><a href="/downloadschedule?facility={{facility}}.csv">{{facility}}</a></span><br><br>
+     <span style="font-size:30px"><a href="/downloadschedule?schedule={{urlparse(scheduleName)}}&facility={{urlparse(facility)}}">{{facility}}</a></span><br><br>
 {% endfor %}
 
 </body>

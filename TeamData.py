@@ -1,6 +1,6 @@
 import datetime
 import html
-
+from copy import deepcopy
 # TODO Web page (flask) as input/UI
 # TODO
 properties = ["Team Name", "Abbreviated Name", "Division", "Practice Days", "Home Facility",
@@ -33,6 +33,8 @@ class Arr:
     def __len__(self):
         return len(self.value)
 class Date:
+    def __deepcopy__(self, memodict={}):
+        return Date(self.name,deepcopy(self.value))
     def to_datetime(self):
         return datetime.datetime(self.year,self.month,self.day)
     @staticmethod
@@ -250,7 +252,8 @@ class Team:
 
                 errors.append(error_messages(prop))
         self.errors = errors
-
+    def __deepcopy__(self, memodict={}):
+        return deepcopy(self.properties)
     # def __str__(self):
     #     s = ""
     #     for prop in self.properties:
