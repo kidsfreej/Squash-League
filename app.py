@@ -442,12 +442,13 @@ def generate_schedule_page():
         if request.form["name"] in MasterSchedule.master_schedules:
             return "schedule with name already exists"
 
-        MasterSchedule.is_scheduling = True
+
         teamsbydiv = {division:{x:teams[x] for x in teams if teams[x].division.value==divisions[division].fullName.value} for division in divisions}
         for division in teamsbydiv:
             if len(teamsbydiv[division])<2:
                 return "please add more than 1 teams to the "+html.escape(division)+" division"
         MasterSchedule.cap_iterations = int(request.form["iterations"])
+        MasterSchedule.is_scheduling = True
         print("attempting to spawn thread")
         generate_schedule_thread(request.form["name"],MasterSchedule.cap_iterations,divisions,teams,facilities)
 
@@ -460,7 +461,7 @@ def loading_screen():
         return flask.redirect("/viewschedules?schedule="+urllib.parse.quote_plus(request.args["name"]))
     if MasterSchedule.is_scheduling:
         return render_template("loadingscreen.html", iters=MasterSchedule.iteration_counter, maxiters=MasterSchedule.cap_iterations,name=request.args["name"])
-    print("wow nothing:",MasterSchedule.is_scheduling)
+    print("wow nothing:",MasterSchedule.iteration_counter)
     return flask.redirect("/")
 @app.route("/cancelscheduler",methods=["POST"])
 def cancel_scheduler():
