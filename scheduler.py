@@ -653,8 +653,8 @@ class MasterSchedule:
                 self.schedules[i]=sched.generate_schedule(int(iterations)//len(self.rawTeams),False,removes_by_divisions[sched.division.fullName])
                 schedules_by_division[self.schedules[i].division.fullName] = self.schedules[i]
 
-        for sched in self.schedules:
-            sched.score(False)
+        # for sched in self.schedules:
+        #     sched.score(False)
             # plt.plot(sched.DEBUG_iterations)
             # plt.text(len(sched.DEBUG_iterations),sched.DEBUG_iterations[-1],sched.division.fullName)
         # plt.savefig("images/epic.png")

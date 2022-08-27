@@ -462,7 +462,7 @@ def loading_screen():
         return flask.redirect("/viewschedules?schedule="+urllib.parse.quote_plus(request.args["name"]))
     if MasterSchedule.is_scheduling:
         return render_template("loadingscreen.html", iters=MasterSchedule.iteration_counter, maxiters=MasterSchedule.cap_iterations,name=request.args["name"])
-    print("wow nothing:",MasterSchedule.DEBUG_global)
+    print("wow nothing:",MasterSchedule.master_schedules)
     return flask.redirect("/")
 @app.route("/cancelscheduler",methods=["POST"])
 def cancel_scheduler():
