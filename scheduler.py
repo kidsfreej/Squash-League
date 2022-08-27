@@ -569,6 +569,7 @@ class MasterSchedule:
     master_schedules :Dict[str,MasterSchedule]={}
     current_schedule = None
     cap_iterations = -1
+    DEBUG_global = False
     def __init__(self,divisions:List[Division],teams:List[Team],facilities:List[Facility]):
         if divisions is None:
             return
