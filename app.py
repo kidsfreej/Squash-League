@@ -52,13 +52,14 @@ def sched_thread(name,iterations,divisions,teams,facilities,do_update):
     if result:
         MasterSchedule.master_schedules[name] = result
     save_pickle()
-
     MasterSchedule.is_scheduling = False
     MasterSchedule.is_updating = False
 def generate_schedule_thread(name,iterations,divisions,teams,facilities,do_update=False):
 
     MasterSchedule.is_updating=do_update
     MasterSchedule.is_scheduling=not do_update
+    print("is updating",MasterSchedule.is_updating)
+    print("is scheduling",MasterSchedule.is_scheduling)
     MasterSchedule.cap_iterations=iterations
     MasterSchedule.iteration_counter=0
     threading.Thread(target=sched_thread,args=(name,iterations,divisions,teams,facilities,do_update)).start()
