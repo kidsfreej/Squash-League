@@ -39,7 +39,7 @@ def save_pickle():
         pickle.dump(pickle_data,f)
 
 def generate_schedule_thread(name,iterations,divisions,teams,facilities,do_update=False):
-
+    print("THREAD SPAWNED SUCCESSFULLY!!")
     MasterSchedule.is_updating=do_update
     MasterSchedule.is_scheduling=not do_update
     MasterSchedule.cap_iterations=iterations
@@ -444,7 +444,7 @@ def generate_schedule_page():
             if len(teamsbydiv[division])<2:
                 return "please add more than 1 teams to the "+html.escape(division)+" division"
         MasterSchedule.cap_iterations = int(request.form["iterations"])
-
+        print("attempting to spawn thread")
         threading.Thread(target=generate_schedule_thread,args=(request.form["name"],MasterSchedule.cap_iterations,divisions,teams,facilities)).start()
 
         return render_template("loadingscreen.html",iters=MasterSchedule.iteration_counter,maxiters=MasterSchedule.cap_iterations,name=request.form["name"])
@@ -551,6 +551,8 @@ def update_schedule_page():
     if MasterSchedule.is_updating:
         return flask.redirect("/loadingscreenupdate?name="+urllib.parse.quote_plus(MasterSchedule.current_schedule))
     MasterSchedule.cap_iterations=int(request.form["iterations"])
+    print("attempting to spawn thread")
+
     threading.Thread(target=generate_schedule_thread,args=(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities,True)).start()
     return flask.redirect("/loadingscreenupdate?name="+urllib.parse.quote_plus(request.form["name"]))
 @app.route("/loadingscreenupdate")
@@ -598,7 +600,7 @@ ON_HEROKU = os.environ.get('PORT')
 if __name__ == '__main__':
     print("cool epic on heroku")
 
-    port = int(os.environ.get('PORT', 17995))  # as per OP comments default is 17995
+    port = int(os.environ.get('PORT', 8000))  # as per OP comments default is 17995
 
     app.run(port=port)
 #TODO:
