@@ -448,7 +448,7 @@ def generate_schedule_page():
         MasterSchedule.cap_iterations = int(request.form["iterations"])
         print("attempting to spawn thread")
         generate_schedule_thread(request.form["name"],MasterSchedule.cap_iterations,divisions,teams,facilities)
-
+        MasterSchedule.is_scheduling= True
         return render_template("loadingscreen.html",iters=MasterSchedule.iteration_counter,maxiters=MasterSchedule.cap_iterations,name=request.form["name"])
 
     return render_template("generateschedule.html", divisions=divisions)
