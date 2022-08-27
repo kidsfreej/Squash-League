@@ -37,13 +37,8 @@ def save_pickle():
     pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,"master_schedules":MasterSchedule.master_schedules}
     with open("data.pickle","wb") as f:
         pickle.dump(pickle_data,f)
+def sched_thread(name,iterations,divisions,teams,facilities,do_update=False):
 
-def generate_schedule_thread(name,iterations,divisions,teams,facilities,do_update=False):
-    print("THREAD SPAWNED SUCCESSFULLY!!")
-    MasterSchedule.is_updating=do_update
-    MasterSchedule.is_scheduling=not do_update
-    MasterSchedule.cap_iterations=iterations
-    MasterSchedule.iteration_counter=0
     if not do_update:
         master = MasterSchedule(divisions, teams, facilities)
     else:
@@ -60,6 +55,13 @@ def generate_schedule_thread(name,iterations,divisions,teams,facilities,do_updat
 
     MasterSchedule.is_scheduling = False
     MasterSchedule.is_updating = False
+def generate_schedule_thread(name,iterations,divisions,teams,facilities,do_update=False):
+
+    MasterSchedule.is_updating=do_update
+    MasterSchedule.is_scheduling=not do_update
+    MasterSchedule.cap_iterations=iterations
+    MasterSchedule.iteration_counter=0
+    threading.Thread(target=sched_thread,args=(name,iterations,divisions,teams,facilities,do_update)).start()
 
 def delete_team(old_name):
     for fac_name in facilities:
@@ -445,7 +447,7 @@ def generate_schedule_page():
                 return "please add more than 1 teams to the "+html.escape(division)+" division"
         MasterSchedule.cap_iterations = int(request.form["iterations"])
         print("attempting to spawn thread")
-        threading.Thread(target=generate_schedule_thread,args=(request.form["name"],MasterSchedule.cap_iterations,divisions,teams,facilities)).start()
+        generate_schedule_thread(request.form["name"],MasterSchedule.cap_iterations,divisions,teams,facilities)
 
         return render_template("loadingscreen.html",iters=MasterSchedule.iteration_counter,maxiters=MasterSchedule.cap_iterations,name=request.form["name"])
 
@@ -553,7 +555,7 @@ def update_schedule_page():
     MasterSchedule.cap_iterations=int(request.form["iterations"])
     print("attempting to spawn thread")
 
-    threading.Thread(target=generate_schedule_thread,args=(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities,True)).start()
+    generate_schedule_thread(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities,True)
     return flask.redirect("/loadingscreenupdate?name="+urllib.parse.quote_plus(request.form["name"]))
 @app.route("/loadingscreenupdate")
 def loading_screen_update():
