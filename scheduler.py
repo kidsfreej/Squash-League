@@ -490,7 +490,6 @@ class Schedule:
             current :Schedule= current.sudoku_copy()
         else:
             current = self.sudoku_copy()
-        print(current)
         best_sched = current
         self.master_schedule.schedules[master_schedule_index] = current
         for combo, game in current.games_by_combo_gen():
@@ -689,20 +688,15 @@ class MasterSchedule:
             for date in sched.games:
                 if len(sched.games[date])>0:
                     dates[date] = sched.games[date]
-        print("1")
         facilities_list = list(self.rawFacilities.values())
         master_csv = "Dates,"+','.join(map(lambda fac:'"'+fac.fullName+ (" - only "+', '.join(fac.allowedTeams)+" matches" if len(fac.allowedTeams)>0 else "")+'"',facilities_list))+"\n"
         i=0
-        print("2")
         for date,game in sorted(list(dates.items()),key=lambda x: x[0]):
             master_csv+='"'+date.strftime("%m/%d/%y")+'",'+','.join(map(MasterSchedule.is_available_facility_as_str,iter(lambda:self,1),facilities_list,iter(lambda:date,1)))+"\n"
             i+=1
-        print("3")
         while i< len(self.rawTeams)*3:
             master_csv+=","*len(self.rawFacilities)+"\n"
             i+=1
-        print("4")
         csves = '\n\n\n'.join(map(Schedule.as_csv,self.schedules))
-        print("5")
         master_csv='\n'.join(map(lambda a,b:a+",,,"+b,master_csv.split("\n"),csves.split("\n")))
         return master_csv
