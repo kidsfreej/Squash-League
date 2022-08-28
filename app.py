@@ -16,12 +16,31 @@ import urllib.parse
 
 app = Flask(__name__)
 
-
+teams = {}
+divisions = {}
+facilities = {}
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
 
-
+def load_pickle():
+    global teams
+    global divisions
+    global facilities
+    teams = {}
+    divisions = {}
+    facilities = {}
+    if os.path.exists("data.pickle"):
+        with open("data.pickle", "rb") as f:
+            d = pickle.load(f)
+            if "teams" in d:
+                teams: Dict[str, Team] = d["teams"]
+            if "divisions" in d:
+                divisions = d["divisions"]
+            if "facilities" in d:
+                facilities: Dict[str, Facility] = d["facilities"]
+            if "master_schedules" in d:
+                MasterSchedule.master_schedules = d["master_schedules"]
 
 
 def save_pickle():
@@ -258,6 +277,7 @@ def index_page():
 
 @app.route("/edit", methods=["POST", "GET"])
 def edit_page():
+    load_pickle()
     if request.method == "POST":
         if request.form["delete"] not in teams:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Team does not exit!"
@@ -326,6 +346,7 @@ def submit_new_division():
 
 @app.route("/editdivision", methods=["GET", "POST"])
 def edit_division():
+    load_pickle()
     if request.method == "POST":
         if request.form["delete"] not in divisions:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Division does not exit!"
@@ -382,6 +403,7 @@ def add_new_facility():
 
 @app.route("/editfacilities", methods=["GET", "POST"])
 def edit_facilities():
+    load_pickle()
     if request.method == "POST":
         if request.form["delete"] not in facilities:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
@@ -475,7 +497,7 @@ def generate_schedule_page():
         MasterSchedule.cap_iterations = int(request.form["iterations"])
         MasterSchedule.is_scheduling = True
         MasterSchedule.DEBUG_global = True
-        print("attempting to spawn thread")
+        load_pickle()
         generate_schedule_thread(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities)
 
         return render_template("loadingscreen.html", iters=MasterSchedule.iteration_counter,
@@ -590,7 +612,7 @@ def update_schedule_page():
         return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(MasterSchedule.current_schedule))
     MasterSchedule.cap_iterations = int(request.form["iterations"])
     print("attempting to spawn thread")
-
+    load_pickle()
     generate_schedule_thread(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities, True)
     return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(request.form["name"]))
 
@@ -625,20 +647,6 @@ def league_settings():
 
 
 
-teams = {}
-divisions = {}
-facilities = {}
-if os.path.exists("data.pickle"):
-    with open("data.pickle", "rb") as f:
-        d = pickle.load(f)
-        if "teams" in d:
-            teams: Dict[str, Team] = d["teams"]
-        if "divisions" in d:
-            divisions = d["divisions"]
-        if "facilities" in d:
-            facilities: Dict[str, Facility] = d["facilities"]
-        if "master_schedules" in d:
-            MasterSchedule.master_schedules = d["master_schedules"]
 
 print("cool epic on heroku")
 
