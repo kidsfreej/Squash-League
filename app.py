@@ -24,8 +24,20 @@ def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
 
 
-
-
+def load_no_play():
+    no_play=  set()
+    no_str = ""
+    if os.path.exists("noplaydates.pickle"):
+        with open("noplaydates.pickle","rb") as f:
+            d= pickle.load(f)
+            if "noplaydates" in d:
+                no_play = d["noplaydates"]
+            if "no_str" in d:
+                no_str = d["no_str"]
+    return no_play,no_str
+def save_no_play(league_wide_no_play_dates,str_league_wide_no_play_dates):
+    with open("noplaydates.pickle","wb") as f:
+        pickle.dump({"no_str":str_league_wide_no_play_dates,"noplaydates":league_wide_no_play_dates},f)
 def load_pickle():
 
     teams = {}
@@ -697,14 +709,16 @@ def cancel_updater(user):
 @app.route("/leaguesettings", methods=["POST", "GET"])
 @htpasswd.required
 def league_settings(user):
+    league_wide_no_play_dates,str_league_wide_no_play_dates = load_no_play()
     if request.method == "GET":
-        return render_template("leaguesettings.html", noPlayDates=Schedule.str_league_wide_no_play_dates)
+        return render_template("leaguesettings.html", noPlayDates=str_league_wide_no_play_dates)
     parsed = Dates("League Wide No Play Dates", request.form["noPlayDates"])
     if parsed.error:
         return render_template("submitnewteam_fail.html", errors=[error_messages(parsed)])
-    Schedule.str_league_wide_no_play_dates = parsed.__repr__()
-    Schedule.league_wide_no_play_dates = parsed.to_set()
-    return render_template("leaguesettingssuccess.html", noPlayDates=Schedule.str_league_wide_no_play_dates)
+    str_league_wide_no_play_dates = parsed.__repr__()
+    league_wide_no_play_dates = parsed.to_set()
+    save_no_play(league_wide_no_play_dates,str_league_wide_no_play_dates)
+    return render_template("leaguesettingssuccess.html", noPlayDates=str_league_wide_no_play_dates)
 
 
 
