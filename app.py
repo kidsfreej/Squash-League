@@ -57,68 +57,40 @@ def save_pickle(teams,divisions,facilities,master_schedules):
     with open("data.pickle", "wb") as f:
         pickle.dump(pickle_data, f)
 
-def load_scheduling_data():
-    is_scheduling=False
-    is_updating =False
-    iteration_counter = -1
-    current_schedule= None
-    cap_iterations=-1
-    if os.path.exists("isscheduling.pickle"):
-        with open("isscheduling.pickle","rb") as f:
-            d = pickle.load(f)
-            if "is_scheduling" in d:
-                is_scheduling = d["is_scheduling"]
-            if "is_updating" in d:
-                is_updating = d["is_updating"]
-            if "iteration_counter" in d:
-                iteration_counter = d["iteration_counter"]
-            if "current_schedule" in d:
-                current_schedule = d["current_schedule"]
-            if "cap_iterations" in d:
-                cap_iterations = d["cap_iterations"]
-    return is_scheduling,is_updating,iteration_counter,current_schedule,cap_iterations
-def save_scheduling_data(is_scheduling=None,is_updating=None,iteration_counter=None,current_schedule=None,cap_iterations=None):
-    issched,isupd,itercounter,currsched,cap_iters = load_scheduling_data()
-    if is_scheduling is not None:
-        issched = is_scheduling
-    if is_updating is not None:
-        isupd = is_updating
-    if iteration_counter is not None:
-        itercounter = iteration_counter
-    if current_schedule is not None:
-        currsched = current_schedule
-    if cap_iterations is not None:
-        cap_iters = cap_iterations
-    with open("isscheduling.pickle", "wb") as f:
-        pickle.dump({"is_scheduling":issched,"is_updating":isupd,"iteration_counter":itercounter,"current_schedule":currsched,"cap_iterations":cap_iters},f)
-def sched_thread(name, iterations, divisions, teams, facilities, do_update):
+
+
+def sched_thread(name, iterations, do_update):
+    teams, divisions, facilities, master_schedules = load_pickle()
     if not do_update:
         master = MasterSchedule(divisions, teams, facilities)
     else:
         master = master_schedules[name]
 
-    MasterSchedule.current_schedule = name
 
+    save_scheduling_data(current_schedule=name)
     result = master.generate_master_schedule(iterations, do_update)
 
     if result:
         master_schedules[name] = result
-    save_pickle()
-    MasterSchedule.is_scheduling = False
-    MasterSchedule.is_updating = False
+    save_pickle(teams,divisions,facilities,master_schedules)
+
+    is_scheduling = False
+    is_updating = False
+    save_scheduling_data(is_scheduling, is_updating)
 
 
-def generate_schedule_thread(name, iterations, divisions, teams, facilities, do_update=False):
-    MasterSchedule.is_updating = do_update
-    MasterSchedule.is_scheduling = not do_update
-    print("is updating", MasterSchedule.is_updating)
-    print("is scheduling", MasterSchedule.is_scheduling)
-    MasterSchedule.cap_iterations = iterations
-    MasterSchedule.iteration_counter = 0
-    threading.Thread(target=sched_thread, args=(name, iterations, divisions, teams, facilities, do_update)).start()
+def generate_schedule_thread(name, iterations, do_update=False):
+
+    is_updating = do_update
+    is_scheduling = not do_update
+    cap_iterations = iterations
+    iteration_counter = 0
+    save_scheduling_data(is_scheduling,is_updating,iteration_counter,None,cap_iterations)
+    threading.Thread(target=sched_thread, args=(name, iterations, do_update)).start()
 
 
 def delete_team(old_name):
+    teams, divisions, facilities, master_schedules = load_pickle()
     for fac_name in facilities:
         if old_name in facilities[fac_name].allowedTeams.value:
             facilities[fac_name].allowedTeams.value.remove(old_name)
@@ -309,6 +281,7 @@ def add_new_team():
 
 @app.route("/newteam", methods=["GET"])
 def newteam_page():
+    teams, divisions, facilities, master_schedules = load_pickle()
     try:
         return render_template("newteam.html", facilities=facilities, divisions=divisions)
     except Exception as e:
@@ -380,6 +353,7 @@ def new_division():
 
 @app.route("/submitnewdivision", methods=["POST"])
 def submit_new_division():
+    teams, divisions, facilities, master_schedules = load_pickle()
     t = Division(request.form["year"], request.form["fullName"], request.form["shortName"],
                  request.form["start"], request.form["end"])
     if len(t.errors) > 0:
@@ -387,7 +361,7 @@ def submit_new_division():
     if t.fullName.value in divisions:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     divisions[t.fullName.value] = t
-    save_pickle()
+    save_pickle(teams, divisions, facilities, master_schedules)
     return render_template("submitnewdivision.html", data=t.properties)
 
 
@@ -414,6 +388,7 @@ def edit_division():
 
 @app.route("/deletedivision")
 def delete_division():
+    teams, divisions, facilities, master_schedules = load_pickle()
     name = request.args.get("division")
     if name == None:
         return "fat L"
@@ -430,6 +405,7 @@ def new_facility_page():
 
 @app.route("/submitnewfacility", methods=["POST"])
 def add_new_facility():
+    teams, divisions, facilities, master_schedules = load_pickle()
     parsed_teams = []
     for i in range(1, 31):
         if "team-" + str(i) in request.form:
@@ -445,7 +421,7 @@ def add_new_facility():
     if t.fullName.value in facilities:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     facilities[t.fullName.value] = t
-    save_pickle()
+    save_pickle(teams, divisions, facilities, master_schedules)
 
     return render_template("submitnewfacility.html", data=t.properties)
 
@@ -472,6 +448,7 @@ def edit_facilities():
 
 @app.route("/submiteditfacility", methods=["POST"])
 def submit_edit_facility():
+    teams, divisions, facilities, master_schedules = load_pickle()
     name = request.form["facilityname"]
     if name in facilities:
 
@@ -491,7 +468,7 @@ def submit_edit_facility():
         facilities.pop(name)
         facilities[t.fullName.value] = t
         change_facility(name, t)
-        save_pickle()
+        save_pickle(teams, divisions, facilities, master_schedules)
         # db.remove_team(name)
         # db.add_team(t)
         return render_template("submiteditfacility.html", data=t.properties)
@@ -500,6 +477,7 @@ def submit_edit_facility():
 
 @app.route("/submiteditdivision", methods=["POST"])
 def submit_edit_division():
+    teams, divisions, facilities, master_schedules = load_pickle()
     name = request.form["divisionname"]
     if name in divisions:
 
@@ -512,7 +490,7 @@ def submit_edit_division():
         divisions[t.fullName.value] = t
 
         change_division(name, t)
-        save_pickle()
+        save_pickle(teams, divisions, facilities, master_schedules)
         # db.remove_team(name)
         # db.add_team(t)
         return render_template("submiteditdivision.html", data=t.properties)
@@ -521,6 +499,7 @@ def submit_edit_division():
 
 @app.route("/deletefacility")
 def delete_facility():
+    teams, divisions, facilities, master_schedules =load_pickle()
     name = request.args.get("facility")
     if name == None or name not in facilities:
         return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a facility</h1>"
@@ -530,10 +509,11 @@ def delete_facility():
 @app.route("/generateschedule", methods=["POST", "GET"])
 def generate_schedule_page():
     teams, divisions, facilities, master_schedules = load_pickle()
-    if MasterSchedule.is_scheduling:
-        return flask.redirect("/loadingscreenpost?name=" + urllib.parse.quote_plus(MasterSchedule.current_schedule))
-    if MasterSchedule.is_updating:
-        return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(MasterSchedule.current_schedule))
+    is_scheduling,is_updating,iteration_counter,current_schedule,cap_iterations = load_scheduling_data()
+    if is_scheduling:
+        return flask.redirect("/loadingscreenpost?name=" + urllib.parse.quote_plus(current_schedule))
+    if is_updating:
+        return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(current_schedule))
     if 'iterations' in request.form:
 
         if request.form["name"] in master_schedules:
@@ -545,36 +525,37 @@ def generate_schedule_page():
         for division in teamsbydiv:
             if len(teamsbydiv[division]) < 2:
                 return "please add more than 1 teams to the " + html.escape(division) + " division"
-        MasterSchedule.cap_iterations = int(request.form["iterations"])
-        MasterSchedule.is_scheduling = True
-        MasterSchedule.DEBUG_global = True
-        generate_schedule_thread(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities)
 
-        return render_template("loadingscreen.html", iters=MasterSchedule.iteration_counter,
-                               maxiters=MasterSchedule.cap_iterations, name=request.form["name"])
+        generate_schedule_thread(request.form["name"], int(request.form["iterations"]))
+
+        return render_template("loadingscreen.html", iters=iteration_counter,
+                               maxiters=cap_iterations, name=request.form["name"])
 
     return render_template("generateschedule.html", divisions=divisions)
 
 
 @app.route("/loadingscreenpost", methods=["GET"])
 def loading_screen():
+    teams, divisions, facilities, master_schedules = load_pickle()
+    is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
     if request.args["name"] in master_schedules:
         return flask.redirect("/viewschedules?schedule=" + urllib.parse.quote_plus(request.args["name"]))
-    if MasterSchedule.is_scheduling:
-        return render_template("loadingscreen.html", iters=MasterSchedule.iteration_counter,
-                               maxiters=MasterSchedule.cap_iterations, name=request.args["name"])
+    if is_scheduling:
+        return render_template("loadingscreen.html", iters=iteration_counter,
+                               maxiters=cap_iterations, name=request.args["name"])
     # print("wow nothing:",master_schedules)
     return flask.redirect("/")
 
 
 @app.route("/cancelscheduler", methods=["POST"])
 def cancel_scheduler():
-    MasterSchedule.is_scheduling = False
+    save_scheduling_data(is_scheduling=False)
     return flask.redirect("/")
 
 
 @app.route("/viewschedules", methods=["GET", "POST"])
 def view_schedules():
+    teams, divisions, facilities, master_schedules = load_pickle()
     if "schedule" in request.args:
         schedu: MasterSchedule = master_schedules[request.args["schedule"]]
         return render_template("scheduledisplay.html", teamsByDivs={division: [x for x in schedu.rawTeams if
@@ -589,6 +570,7 @@ def view_schedules():
 
 @app.route("/downloadschedule")
 def download_schedule():
+    teams, divisions, facilities, master_schedules = load_pickle()
     if "schedule" in request.args and "division" in request.args:
         try:
             schedu: Schedule = next(x for x in master_schedules[request.args["schedule"]].schedules if
@@ -625,6 +607,7 @@ def download_schedule():
 
 @app.route("/downloadbyfacility")
 def download_by_facility():
+    teams, divisions, facilities, master_schedules = load_pickle()
     if 'schedule' not in request.args:
         return "no schedule when trying to download by faciltiy"
     if request.args["schedule"] not in master_schedules:
@@ -636,6 +619,7 @@ def download_by_facility():
 
 @app.route("/deleteschedule", methods=["GET", "POST"])
 def delete_schedule():
+    teams, divisions, facilities, master_schedules = load_pickle()
     if request.method == 'POST':
         if request.form["name"] in master_schedules:
             master_schedules.pop(request.form["name"])
@@ -651,34 +635,34 @@ def delete_schedule():
 @app.route("/updateschedule", methods=["GET", "POST"])
 def update_schedule_page():
     teams, divisions, facilities, master_schedules = load_pickle()
+    is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
     if request.method == "GET":
         if "schedule" not in request.args:
             return "Please select a schedule to update"
         if request.args["schedule"] not in master_schedules:
             return "Non-existant schedule"
         return render_template("updateschedule.html", name=request.args["schedule"])
-    if MasterSchedule.is_scheduling:
-        return flask.redirect("/loadingscreenpost?name=" + urllib.parse.quote_plus(MasterSchedule.current_schedule))
-    if MasterSchedule.is_updating:
-        return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(MasterSchedule.current_schedule))
-    MasterSchedule.cap_iterations = int(request.form["iterations"])
-    print("attempting to spawn thread")
-    load_pickle()
-    generate_schedule_thread(request.form["name"], MasterSchedule.cap_iterations, divisions, teams, facilities, True)
+    if is_scheduling:
+        return flask.redirect("/loadingscreenpost?name=" + urllib.parse.quote_plus(current_schedule))
+    if is_updating:
+        return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(current_schedule))
+
+    generate_schedule_thread(request.form["name"], int(request.form["iterations"]), True)
     return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(request.form["name"]))
 
 
 @app.route("/loadingscreenupdate")
 def loading_screen_update():
-    if not MasterSchedule.is_updating:
+    is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
+    if not is_updating:
         return flask.redirect("/viewschedules?schedule=" + urllib.parse.quote_plus(request.args["name"]))
-    return render_template("loadingscreenupdate.html", iters=MasterSchedule.iteration_counter,
-                           maxiters=MasterSchedule.cap_iterations, name=request.args["name"])
+    return render_template("loadingscreenupdate.html", iters=iteration_counter,
+                           maxiters=cap_iterations, name=request.args["name"])
 
 
 @app.route("/cancelupdater", methods=["POST"])
 def cancel_updater():
-    MasterSchedule.is_updating = False
+    save_scheduling_data(is_updating=False)
 
     return flask.redirect("/")
 

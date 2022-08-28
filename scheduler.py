@@ -4,12 +4,49 @@ from copy import copy,deepcopy
 import datetime
 import pickle
 import bisect
+import os.path
 import math
 # import matplotlib.pyplot as plt
 from typing import List, Dict
 
 from TeamData import *
 # import matplotlib.pyplot as plt
+
+def load_scheduling_data():
+    is_scheduling=False
+    is_updating =False
+    iteration_counter = -1
+    current_schedule= None
+    cap_iterations=-1
+
+    if os.path.exists("isscheduling.pickle"):
+        with open("isscheduling.pickle","rb") as f:
+            d = pickle.load(f)
+            if "is_scheduling" in d:
+                is_scheduling = d["is_scheduling"]
+            if "is_updating" in d:
+                is_updating = d["is_updating"]
+            if "iteration_counter" in d:
+                iteration_counter = d["iteration_counter"]
+            if "current_schedule" in d:
+                current_schedule = d["current_schedule"]
+            if "cap_iterations" in d:
+                cap_iterations = d["cap_iterations"]
+    return is_scheduling,is_updating,iteration_counter,current_schedule,cap_iterations
+def save_scheduling_data(is_scheduling=None,is_updating=None,iteration_counter=None,current_schedule=None,cap_iterations=None):
+    issched,isupd,itercounter,currsched,cap_iters = load_scheduling_data()
+    if is_scheduling is not None:
+        issched = is_scheduling
+    if is_updating is not None:
+        isupd = is_updating
+    if iteration_counter is not None:
+        itercounter = iteration_counter
+    if current_schedule is not None:
+        currsched = current_schedule
+    if cap_iterations is not None:
+        cap_iters = cap_iterations
+    with open("isscheduling.pickle", "wb") as f:
+        pickle.dump({"is_scheduling":issched,"is_updating":isupd,"iteration_counter":itercounter,"current_schedule":currsched,"cap_iterations":cap_iters},f)
 def date_range_gen(start,end):
     r  = set()
     cur_date = start
@@ -499,6 +536,8 @@ class Schedule:
 
         for i in range(iterations):
             MasterSchedule.iteration_counter+=1
+            if i%500==0:
+                save_scheduling_data(iteration_counter=MasterSchedule.iteration_counter)
             current = self.master_schedule.schedules[master_schedule_index]
             lowest_removed=None
             lowest_score = 99999
@@ -509,6 +548,7 @@ class Schedule:
                         continue
                     game:Game = current.games_by_combo[combo]
                     if game:
+
                         current.remove_game(game)
                     current.team_combos.append(combo)
                     t_score = current.score()
@@ -599,6 +639,7 @@ class MasterSchedule:
         for i,x in list(enumerate(self.schedules))[::-1]:
             print(self.schedules[i].division.fullName)
             self.schedules[i]=x.generate_schedule(int(iterations), do_update)
+
         schedules_by_division:Dict[str,Schedule] = {x.division.fullName:x for x in self.schedules}
 
         # #remove conflicts
