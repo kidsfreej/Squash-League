@@ -34,11 +34,11 @@ def load_pickle():
         with open("data.pickle", "rb") as f:
             d = pickle.load(f)
             if "teams" in d:
-                teams: Dict[str, Team] = d["teams"]
+                teams= d["teams"]
             if "divisions" in d:
                 divisions = d["divisions"]
             if "facilities" in d:
-                facilities: Dict[str, Facility] = d["facilities"]
+                facilities= d["facilities"]
             if "master_schedules" in d:
                 MasterSchedule.master_schedules = d["master_schedules"]
 
