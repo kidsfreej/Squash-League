@@ -643,5 +643,5 @@ if os.path.exists("data.pickle"):
 print("cool epic on heroku")
 
 port = int(os.environ.get('PORT', 8000))  # as per OP comments default is 17995
-
-app.run(port=port)
+if __name__ == "__main__":
+    app.run(port=port)
