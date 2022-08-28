@@ -13,9 +13,12 @@ from scheduler import *
 from database import Database
 import pickle
 import urllib.parse
-
+from flask_htpasswd import HtPasswdAuth
+from supabase_py import create_client,Client
 app = Flask(__name__)
-
+app.config['FLASK_HTPASSWD_PATH'] = 'password.txt'
+app.config['FLASK_SECRET'] = 'suepr secret stirng of text dont share this with anyone '
+htpasswd = HtPasswdAuth(app)
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
@@ -289,12 +292,14 @@ def newteam_page():
 
 
 @app.route("/", methods=["GET"])
-def index_page():
+@htpasswd.required
+def index_page(user):
     return send_from_directory("./websites", "index.html")
 
 
 @app.route("/edit", methods=["POST", "GET"])
-def edit_page():
+@htpasswd.required
+def edit_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if request.method == "POST":
         if request.form["delete"] not in teams:
@@ -313,7 +318,8 @@ def edit_page():
 
 
 @app.route("/submitedit", methods=["POST"])
-def submit_edit_page():
+@htpasswd.required
+def submit_edit_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     name = request.form["teamname"]
     if name in teams:
@@ -337,7 +343,8 @@ def submit_edit_page():
 
 
 @app.route("/delete", methods=["GET"])
-def delete_page():
+@htpasswd.required
+def delete_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     name = request.args.get("team")
     if name == None or name not in teams:
@@ -347,12 +354,14 @@ def delete_page():
 
 
 @app.route("/newdivision")
-def new_division():
+@htpasswd.required
+def new_division(user):
     return send_from_directory("./websites", "newdivision.html")
 
 
 @app.route("/submitnewdivision", methods=["POST"])
-def submit_new_division():
+@htpasswd.required
+def submit_new_division(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     t = Division(request.form["year"], request.form["fullName"], request.form["shortName"],
                  request.form["start"], request.form["end"])
@@ -366,7 +375,8 @@ def submit_new_division():
 
 
 @app.route("/editdivision", methods=["GET", "POST"])
-def edit_division():
+@htpasswd.required
+def edit_division(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if request.method == "POST":
         if request.form["delete"] not in divisions:
@@ -387,7 +397,8 @@ def edit_division():
 
 
 @app.route("/deletedivision")
-def delete_division():
+@htpasswd.required
+def delete_division(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     name = request.args.get("division")
     if name == None:
@@ -398,13 +409,15 @@ def delete_division():
 
 
 @app.route("/newfacility")
-def new_facility_page():
+@htpasswd.required
+def new_facility_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     return render_template("newfacility.html", teams=teams)
 
 
 @app.route("/submitnewfacility", methods=["POST"])
-def add_new_facility():
+@htpasswd.required
+def add_new_facility(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     parsed_teams = []
     for i in range(1, 31):
@@ -427,7 +440,8 @@ def add_new_facility():
 
 
 @app.route("/editfacilities", methods=["GET", "POST"])
-def edit_facilities():
+@htpasswd.required
+def edit_facilities(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if request.method == "POST":
         if request.form["delete"] not in facilities:
@@ -447,7 +461,8 @@ def edit_facilities():
 
 
 @app.route("/submiteditfacility", methods=["POST"])
-def submit_edit_facility():
+@htpasswd.required
+def submit_edit_facility(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     name = request.form["facilityname"]
     if name in facilities:
@@ -476,7 +491,8 @@ def submit_edit_facility():
 
 
 @app.route("/submiteditdivision", methods=["POST"])
-def submit_edit_division():
+@htpasswd.required
+def submit_edit_division(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     name = request.form["divisionname"]
     if name in divisions:
@@ -498,7 +514,8 @@ def submit_edit_division():
 
 
 @app.route("/deletefacility")
-def delete_facility():
+@htpasswd.required
+def delete_facility(user):
     teams, divisions, facilities, master_schedules =load_pickle()
     name = request.args.get("facility")
     if name == None or name not in facilities:
@@ -507,7 +524,8 @@ def delete_facility():
 
 
 @app.route("/generateschedule", methods=["POST", "GET"])
-def generate_schedule_page():
+@htpasswd.required
+def generate_schedule_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     is_scheduling,is_updating,iteration_counter,current_schedule,cap_iterations = load_scheduling_data()
     if is_scheduling:
@@ -535,7 +553,8 @@ def generate_schedule_page():
 
 
 @app.route("/loadingscreenpost", methods=["GET"])
-def loading_screen():
+@htpasswd.required
+def loading_screen(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
     if request.args["name"] in master_schedules:
@@ -548,13 +567,15 @@ def loading_screen():
 
 
 @app.route("/cancelscheduler", methods=["POST"])
-def cancel_scheduler():
+@htpasswd.required
+def cancel_scheduler(user):
     save_scheduling_data(is_scheduling=False)
     return flask.redirect("/")
 
 
 @app.route("/viewschedules", methods=["GET", "POST"])
-def view_schedules():
+@htpasswd.required
+def view_schedules(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if "schedule" in request.args:
         schedu: MasterSchedule = master_schedules[request.args["schedule"]]
@@ -569,7 +590,8 @@ def view_schedules():
 
 
 @app.route("/downloadschedule")
-def download_schedule():
+@htpasswd.required
+def download_schedule(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if "schedule" in request.args and "division" in request.args:
         try:
@@ -606,7 +628,8 @@ def download_schedule():
 
 
 @app.route("/downloadbyfacility")
-def download_by_facility():
+@htpasswd.required
+def download_by_facility(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if 'schedule' not in request.args:
         return "no schedule when trying to download by faciltiy"
@@ -618,7 +641,8 @@ def download_by_facility():
 
 
 @app.route("/deleteschedule", methods=["GET", "POST"])
-def delete_schedule():
+@htpasswd.required
+def delete_schedule(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if request.method == 'POST':
         if request.form["name"] in master_schedules:
@@ -633,7 +657,8 @@ def delete_schedule():
 
 
 @app.route("/updateschedule", methods=["GET", "POST"])
-def update_schedule_page():
+@htpasswd.required
+def update_schedule_page(page):
     teams, divisions, facilities, master_schedules = load_pickle()
     is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
     if request.method == "GET":
@@ -652,7 +677,8 @@ def update_schedule_page():
 
 
 @app.route("/loadingscreenupdate")
-def loading_screen_update():
+@htpasswd.required
+def loading_screen_update(user):
     is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
     if not is_updating:
         return flask.redirect("/viewschedules?schedule=" + urllib.parse.quote_plus(request.args["name"]))
@@ -661,14 +687,16 @@ def loading_screen_update():
 
 
 @app.route("/cancelupdater", methods=["POST"])
-def cancel_updater():
+@htpasswd.required
+def cancel_updater(user):
     save_scheduling_data(is_updating=False)
 
     return flask.redirect("/")
 
 
 @app.route("/leaguesettings", methods=["POST", "GET"])
-def league_settings():
+@htpasswd.required
+def league_settings(user):
     if request.method == "GET":
         return render_template("leaguesettings.html", noPlayDates=Schedule.str_league_wide_no_play_dates)
     parsed = Dates("League Wide No Play Dates", request.form["noPlayDates"])
@@ -687,4 +715,10 @@ print("cool epic on heroku")
 
 port = int(os.environ.get('PORT', 5000))  # as per OP comments default is 17995
 if __name__ == "__main__":
+
+
+    url: str = os.environ.get("SUPABASE_URL")
+    key: str = os.environ.get("SUPABASE_ANON_KEY")
+
+    supabase: Client = create_client(url, key)
     app.run(port=port)

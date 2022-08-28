@@ -537,7 +537,10 @@ class Schedule:
         for i in range(iterations):
             MasterSchedule.iteration_counter+=1
             if i%500==0:
-                save_scheduling_data(iteration_counter=MasterSchedule.iteration_counter)
+                try:
+                    save_scheduling_data(iteration_counter=MasterSchedule.iteration_counter)
+                except:
+                    pass
             current = self.master_schedule.schedules[master_schedule_index]
             lowest_removed=None
             lowest_score = 99999
