@@ -624,24 +624,24 @@ def league_settings():
 
 
 
-if __name__ == '__main__':
-    teams = {}
-    divisions = {}
-    facilities = {}
-    if os.path.exists("data.pickle"):
-        with open("data.pickle", "rb") as f:
-            d = pickle.load(f)
-            if "teams" in d:
-                teams: Dict[str, Team] = d["teams"]
-            if "divisions" in d:
-                divisions = d["divisions"]
-            if "facilities" in d:
-                facilities: Dict[str, Facility] = d["facilities"]
-            if "master_schedules" in d:
-                MasterSchedule.master_schedules = d["master_schedules"]
 
-    print("cool epic on heroku")
+teams = {}
+divisions = {}
+facilities = {}
+if os.path.exists("data.pickle"):
+    with open("data.pickle", "rb") as f:
+        d = pickle.load(f)
+        if "teams" in d:
+            teams: Dict[str, Team] = d["teams"]
+        if "divisions" in d:
+            divisions = d["divisions"]
+        if "facilities" in d:
+            facilities: Dict[str, Facility] = d["facilities"]
+        if "master_schedules" in d:
+            MasterSchedule.master_schedules = d["master_schedules"]
 
-    port = int(os.environ.get('PORT', 8000))  # as per OP comments default is 17995
+print("cool epic on heroku")
 
-    app.run(port=port)
+port = int(os.environ.get('PORT', 8000))  # as per OP comments default is 17995
+
+app.run(port=port)
