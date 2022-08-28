@@ -14,7 +14,7 @@ from database import Database
 import pickle
 import urllib.parse
 from flask_htpasswd import HtPasswdAuth
-from supabase_py import create_client,Client
+
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = 'password.txt'
 app.config['FLASK_SECRET'] = 'suepr secret stirng of text dont share this with anyone '
@@ -717,8 +717,4 @@ port = int(os.environ.get('PORT', 5000))  # as per OP comments default is 17995
 if __name__ == "__main__":
 
 
-    url: str = os.environ.get("SUPABASE_URL")
-    key: str = os.environ.get("SUPABASE_ANON_KEY")
-
-    supabase: Client = create_client(url, key)
     app.run(port=port)
