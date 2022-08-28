@@ -41,19 +41,19 @@ def load_pickle():
             if "master_schedules" in d:
                master_schedules = d["master_schedules"]
     return teams,divisions,facilities,master_schedules
-teams,divisions,facilities,master_schedules  = load_pickle()
 def save_pickle(teams,divisions,facilities,master_schedules):
+
     t,d,f,ms =load_pickle()
-    for k in t:
-        teams[k] =t[k]
-    for k in f:
-        facilities[k] =f[k]
-    for k in d:
-        divisions[k] =d[k]
-    for k in ms:
-        master_schedules[k] = ms[k]
-    pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,
-                   "master_schedules": master_schedules}
+    for k in teams:
+        t[k] =teams[k]
+    for k in facilities:
+        f[k] =facilities[k]
+    for k in divisions:
+        d[k] =divisions[k]
+    for k in master_schedules:
+        ms[k] = master_schedules[k]
+    pickle_data = {"teams": t, "divisions": d, "facilities": f,
+                   "master_schedules": ms}
     with open("data.pickle", "wb") as f:
         pickle.dump(pickle_data, f)
 
