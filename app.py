@@ -23,7 +23,6 @@ htpasswd = HtPasswdAuth(app)
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
 
-
 def load_no_play():
     no_play=  set()
     no_str = ""
