@@ -78,7 +78,7 @@ def delete_pickle(team=None,division=None,facility=None,master_schedule=None):
     if division:
         divisions.pop(division)
     if facility:
-        division.pop(facility)
+        facilities.pop(facility)
     if master_schedule:
         master_schedules.pop(master_schedule)
     pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,
@@ -147,7 +147,7 @@ def delete_team(old_name):
                     to_remove.append(combo)
             for r in to_remove:
                 schedule.games_by_combo.pop(r)
-
+    save_pickle(teams, divisions, facilities, master_schedules)
 
 def delete_facility(old_name):
     teams, divisions, facilities, master_schedules = load_pickle()
@@ -167,7 +167,7 @@ def delete_facility(old_name):
         for schedule in master_sched.schedules:
             if old_name in schedule.facilities:
                 schedule.facilities.pop(old_name)
-
+    save_pickle(teams, divisions, facilities, master_schedules)
 
 def change_team(old_name, new_team: Team):
     teams, divisions, facilities, master_schedules = load_pickle()
@@ -335,7 +335,7 @@ def edit_page(user):
         return flask.redirect("/edit")
     arg = request.args.get("team")
     if arg == None:
-        return render_template("selectteamedit.html", teams=teams, ordered_teams=sorted(list(teams.keys())))
+        return render_template("selectteamedit.html", teams=teams, ordered_teams=sorted(list(teams.keys()),key=str.lower))
 
     if arg in teams:
         return render_template("editteam.html", team=teams[arg], facilities=facilities, divisions=divisions)
@@ -415,7 +415,7 @@ def edit_division(user):
         return flask.redirect("/editdivision")
     arg = request.args.get("division")
     if arg == None:
-        return render_template("selectdivisionedit.html", teams=divisions, ordered_teams=sorted(list(divisions.keys())))
+        return render_template("selectdivisionedit.html", teams=divisions, ordered_teams=sorted(list(divisions.keys()),key=str.lower))
 
     if arg in divisions:
         return render_template("editdivision.html", facility=divisions[arg])
@@ -478,7 +478,7 @@ def edit_facilities(user):
     arg = request.args.get("facility")
     if arg == None:
         return render_template("selectfacilityedit.html", teams=facilities,
-                               ordered_teams=sorted(list(facilities.keys())))
+                               ordered_teams=sorted(list(facilities.keys())),key=str.lower)
 
     if arg in facilities:
         return render_template("editfacility.html", facility=facilities[arg], teams=teams)
