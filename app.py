@@ -72,7 +72,20 @@ def save_pickle(teams,divisions,facilities,master_schedules):
     with open("data.pickle", "wb") as f:
         pickle.dump(pickle_data, f)
 
-
+def delete_pickle(team=None,division=None,facility=None,master_schedule=None):
+    teams, divisions, facilities, master_schedules = load_pickle()
+    if team:
+        teams.pop(team)
+    if division:
+        divisions.pop(division)
+    if facility:
+        division.pop(facility)
+    if master_schedule:
+        master_schedules.pop(master_schedule)
+    pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,
+                   "master_schedules": master_schedules}
+    with open("data.pickle", "wb") as f:
+        pickle.dump(pickle_data, f)
 
 def sched_thread(name, iterations, do_update):
     teams, divisions, facilities, master_schedules = load_pickle()
@@ -277,7 +290,8 @@ def generate_csv_facility(facility, master_sched: MasterSchedule):
 
 
 @app.route("/submitnewteam", methods=["POST"])
-def add_new_team():
+@htpasswd.required
+def add_new_team(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     t = Team(request.form["fullName"], request.form["shortName"], request.form["division"],
              Weekdays.parse_weekdays(request.form, "practiceDays"), request.form["homeFacility"],
@@ -295,7 +309,8 @@ def add_new_team():
 
 
 @app.route("/newteam", methods=["GET"])
-def newteam_page():
+@htpasswd.required
+def newteam_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     try:
         return render_template("newteam.html", facilities=facilities, divisions=divisions)
@@ -316,9 +331,8 @@ def edit_page(user):
     if request.method == "POST":
         if request.form["delete"] not in teams:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Team does not exit!"
-        teams.pop(request.form["delete"])
         delete_team(request.form["delete"])
-        save_pickle(teams, divisions, facilities, master_schedules)
+        delete_pickle(team=request.form["delete"])
         return flask.redirect("/edit")
     arg = request.args.get("team")
     if arg == None:
@@ -346,9 +360,10 @@ def submit_edit_page(user):
             return render_template("submitnewteam_fail.html", errors=t.errors)
 
         teams.pop(request.form["teamname"])
+        delete_pickle(team=request.form["teamname"])
         teams[t.fullName.value] = t
         change_team(request.form["teamname"], t)
-        save_pickle()
+        save_pickle(teams, divisions, facilities, master_schedules)
         return render_template("submiteditteam.html", data=t.properties)
 
     return "Ok  this should neve everr happen. "
@@ -397,7 +412,7 @@ def edit_division(user):
         for team in teams:
             if teams[team].division.value == request.form["delete"]:
                 teams[team].division.value = None
-        save_pickle(teams, divisions, facilities, master_schedules)
+        delete_pickle(division=request.form["delete"])
         return flask.redirect("/editdivision")
     arg = request.args.get("division")
     if arg == None:
@@ -460,7 +475,6 @@ def edit_facilities(user):
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
         facilities.pop(request.form["delete"])
         delete_facility(request.form["delete"])
-        save_pickle(teams, divisions, facilities, master_schedules)
         return flask.redirect("/editfacilities")
     arg = request.args.get("facility")
     if arg == None:
@@ -493,11 +507,11 @@ def submit_edit_facility(user):
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
         facilities.pop(name)
+        delete_pickle(facility=name)
         facilities[t.fullName.value] = t
+
         change_facility(name, t)
         save_pickle(teams, divisions, facilities, master_schedules)
-        # db.remove_team(name)
-        # db.add_team(t)
         return render_template("submiteditfacility.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a facility!!"
 
@@ -515,12 +529,10 @@ def submit_edit_division(user):
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
         divisions.pop(name)
+        delete_pickle(name)
         divisions[t.fullName.value] = t
-
         change_division(name, t)
         save_pickle(teams, divisions, facilities, master_schedules)
-        # db.remove_team(name)
-        # db.add_team(t)
         return render_template("submiteditdivision.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a division!!"
 
@@ -658,7 +670,7 @@ def delete_schedule(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     if request.method == 'POST':
         if request.form["name"] in master_schedules:
-            master_schedules.pop(request.form["name"])
+            delete_pickle(master_schedule=request.form["name"])
             return flask.redirect("/viewschedules")
         return "bruuuh error related to delete schedule"
     if "schedule" in request.args:
@@ -670,7 +682,7 @@ def delete_schedule(user):
 
 @app.route("/updateschedule", methods=["GET", "POST"])
 @htpasswd.required
-def update_schedule_page(page):
+def update_schedule_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
     if request.method == "GET":
