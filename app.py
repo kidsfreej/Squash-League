@@ -287,7 +287,27 @@ def generate_csv_facility(facility, master_sched: MasterSchedule):
     return "Date,Team 1,Team 2,Facility\n" + '\n'.join(
         list(map(lambda x: x.csv_display_versus_with_facility() if x else '', games)))
 
+@app.route("/clone")
+@htpasswd.required
+def clone_team(user):
+    if "team"  not in request.args:
+        return "bruh"
+    teams, divisions, facilities, master_schedules = load_pickle()
 
+    team = teams[request.args["team"]]
+    t = Team(team.fullName.value+" clone", team.shortName.value, team.division.value,
+             team.practiceDays.days, team.homeFacility.value,
+             team.alternateFacility.value, repr(team.noPlayDates),
+             team.noMatchDays.days, str(team.homeMatchPCT.value),
+             repr(team.startDate))
+    if len(t.errors) > 0:
+        return render_template("submitnewteam_fail.html", errors=t.errors)
+    if t.fullName.value in teams:
+        t.fullName.value+=" (2)"
+    teams[t.fullName.value] = t
+    save_pickle(teams, divisions, facilities, master_schedules)
+
+    return flask.redirect("/edit")
 @app.route("/submitnewteam", methods=["POST"])
 @htpasswd.required
 def add_new_team(user):
