@@ -61,30 +61,39 @@
     <label>Dates cannot host matches</label><input type="text" name="datesCantHost" value="{{facility.datesCantHost}}">
     <label>Required team(s)</label>
 
-    <script>
-        var x = {{facility.allowedTeams.__len__()}};
+        <script>
+        var x = 0;
         function change(){
             var dom = document.getElementById("count");
+            revised = dom.value;
             if(dom.value>30){
                 dom.value = 30
-                return;
+                revised = 30;
             }
-                if(dom.value >x){
+                if(revised >x){
 
-                    x = parseInt(dom.value);
-                    var n = document.createElement("input");
-                    var m = document.getElementById("here");
-                    m.innerHTML +=`<select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-`+x+`">
-                               <option value="$none">None</option>
-                    {% for team in teams %}
-                <option value="{{team}}">{{teams[team].shortName}}</option>
-                    {% endfor %}
-                    `
+                    counter = x;
+                    x = parseInt(revised);
+                    while(counter<x){
+                        var n = document.createElement("input");
+                        var m = document.getElementById("here");
+                        m.innerHTML +=`<select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-`+x+`">
+                                   <option value="$none">None</option>
+                        {% for team in ordered_teams %}
+                    <option value="{{team}}">{{teams[team].shortName}}</option>
+                        {% endfor %}
+                        `
+                        counter+=1;
+                    }
 
                 }else{
-                var here = document.getElementById("here");
-                   here.removeChild(here.children[here.children.length-1]);
-                   x=x-1
+                counter = x;
+                x = parseInt(dom.value);
+                while(x<counter){
+                    var here = document.getElementById("here");
+                       here.removeChild(here.children[here.children.length-1]);
+                    counter-=1;
+                    }
                 }
 
         }
@@ -95,7 +104,7 @@
     {% for ateam in facility.allowedTeams.value %}
     <select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-{{i+1}}">
         <option value="$none">None</option>
-        {% for team in teams %}
+        {% for team in ordered_teams %}
             <option value="{{teams[team].fullName}}" {{'selected="selected"' if ateam==teams[team].fullName.value else ""}}>{{teams[team].shortName}}</option>
         {% endfor %}
     </select>

@@ -19,6 +19,7 @@ app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = 'password.txt'
 app.config['FLASK_SECRET'] = 'suepr secret stirng of text dont share this with anyone '
 htpasswd = HtPasswdAuth(app)
+
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
@@ -73,12 +74,13 @@ def save_pickle(teams,divisions,facilities,master_schedules):
 
 def delete_pickle(team=None,division=None,facility=None,master_schedule=None):
     teams, divisions, facilities, master_schedules = load_pickle()
-    if team:
+    if team is not None:
         teams.pop(team)
-    if division:
+    if division is not None:
         divisions.pop(division)
-    if facility:
+    if facility is not None:
         facilities.pop(facility)
+    print(facilities)
     if master_schedule:
         master_schedules.pop(master_schedule)
     pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,
@@ -332,7 +334,7 @@ def add_new_team(user):
 def newteam_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     try:
-        return render_template("newteam.html", facilities=facilities, divisions=divisions)
+        return render_template("newteam.html", facilities=facilities,divisions=divisions,sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()),divs=sorted(divisions.keys(),key=lambda x:divisions[x].shortName.value.lower()))
     except Exception as e:
         print(e)
 
@@ -358,7 +360,8 @@ def edit_page(user):
         return render_template("selectteamedit.html", teams=teams, ordered_teams=sorted(list(teams.keys()),key=str.lower))
 
     if arg in teams:
-        return render_template("editteam.html", team=teams[arg], facilities=facilities, divisions=divisions)
+
+        return render_template("editteam.html", team=teams[arg], facilities=facilities, divisions=divisions,sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()),key=lambda x:divisions[x].shortName.value.lower())
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
 
 
@@ -444,7 +447,7 @@ def edit_division(user):
 
 @app.route("/deletedivision")
 @htpasswd.required
-def delete_division(user):
+def delete_division_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     name = request.args.get("division")
     if name == None:
@@ -458,7 +461,7 @@ def delete_division(user):
 @htpasswd.required
 def new_facility_page(user):
     teams, divisions, facilities, master_schedules = load_pickle()
-    return render_template("newfacility.html", teams=teams)
+    return render_template("newfacility.html", teams=teams,ordered_teams=sorted(list(teams.keys()),key=lambda x: teams[x].shortName.value.lower()))
 
 
 @app.route("/submitnewfacility", methods=["POST"])
@@ -466,7 +469,7 @@ def new_facility_page(user):
 def add_new_facility(user):
     teams, divisions, facilities, master_schedules = load_pickle()
     parsed_teams = []
-    for i in range(1, 31):
+    for i in range(1, len(teams)+1):
         if "team-" + str(i) in request.form:
             if request.form["team-" + str(i)] == "$none" or request.form["team-" + str(i)] in parsed_teams:
                 continue
@@ -492,16 +495,17 @@ def edit_facilities(user):
     if request.method == "POST":
         if request.form["delete"] not in facilities:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
-        facilities.pop(request.form["delete"])
         delete_facility(request.form["delete"])
+
+        delete_pickle(facility=request.form["delete"])
         return flask.redirect("/editfacilities")
     arg = request.args.get("facility")
     if arg == None:
         return render_template("selectfacilityedit.html", teams=facilities,
-                               ordered_teams=sorted(list(facilities.keys())),key=str.lower)
+                               ordered_teams=sorted(list(facilities.keys()),key=lambda x:x.lower()))
 
     if arg in facilities:
-        return render_template("editfacility.html", facility=facilities[arg], teams=teams)
+        return render_template("editfacility.html", facility=facilities[arg], teams=teams,ordered_teams=sorted(list(teams.keys()),key=lambda x: teams[x].shortName.value.lower()))
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
 
 
@@ -513,7 +517,7 @@ def submit_edit_facility(user):
     if name in facilities:
 
         parsed_teams = []
-        for i in range(1, 31):
+        for i in range(1, len(teams)+1):
             if "team-" + str(i) in request.form:
                 if request.form["team-" + str(i)] == "$none" or request.form["team-" + str(i)] in parsed_teams:
                     continue
@@ -548,7 +552,7 @@ def submit_edit_division(user):
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
         divisions.pop(name)
-        delete_pickle(name)
+        delete_pickle(division=name)
         divisions[t.fullName.value] = t
         change_division(name, t)
         save_pickle(teams, divisions, facilities, master_schedules)
@@ -558,7 +562,7 @@ def submit_edit_division(user):
 
 @app.route("/deletefacility")
 @htpasswd.required
-def delete_facility(user):
+def delete_facility_page(user):
     teams, divisions, facilities, master_schedules =load_pickle()
     name = request.args.get("facility")
     if name == None or name not in facilities:
@@ -678,7 +682,7 @@ def download_by_facility(user):
         return "no schedule when trying to download by faciltiy"
     if request.args["schedule"] not in master_schedules:
         return "Unkown schedule: " + html.escape(request.args["schedule"])
-    return render_template("downloadbyfacility.html", facilities=facilities, scheduleName=request.args["schedule"])
+    return render_template("downloadbyfacility.html", facilities=facilities, scheduleName=request.args["schedule"],sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()))
 
 
 

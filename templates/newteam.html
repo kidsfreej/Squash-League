@@ -43,7 +43,7 @@
     <label>Abbreviated Name</label>  <input type="text" name="shortName" placeholder="Abbreviated Name" required><br>
     <label>Division</label>  <select name="division">
                 <option value="$none">None</option>
-            {% for division in divisions %}
+            {% for division in divs %}
         <option value="{{division}}">{{divisions[division].shortName}}</option>
             {% endfor %}
 
@@ -61,13 +61,13 @@
     <br>
         <label>Home Facility </label><select name="homeFacility">
         <option value="$none">None</option>
-            {% for facility in facilities %}
+            {% for facility in sfacs %}
         <option value="{{facility}}">{{facilities[facility].shortName}}</option>
             {% endfor %}
     </select>
     <label>Alternate Facility</label> <select name="alternativeFacility">
         <option value="$none">None</option>
-            {% for facility in facilities %}
+            {% for facility in sfacs %}
         <option value="{{facility}}">{{facilities[facility].shortName}}</option>
             {% endfor %}
     </select>
