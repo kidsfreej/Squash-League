@@ -287,7 +287,7 @@ def generate_csv_facility(facility, master_sched: MasterSchedule):
                     games.append(game)
     games = sorted(games, key=lambda x: x.date)
     return "Date,Team 1,Team 2,Facility\n" + '\n'.join(
-        list(map(lambda x: x.csv_display_versus_with_facility() if x else '', games)))
+        list(map(lambda x: x.csv_display_versus_with_facility_full() if x else '', games)))
 
 @app.route("/clone")
 @htpasswd.required
@@ -388,7 +388,7 @@ def submit_edit_page(user):
         save_pickle(teams, divisions, facilities, master_schedules)
         return render_template("submiteditteam.html", data=t.properties)
 
-    return "Ok  this should neve everr happen. "
+    return "Ok this should neve everr happen. "
 
 
 @app.route("/delete", methods=["GET"])
@@ -438,7 +438,10 @@ def edit_division(user):
         return flask.redirect("/editdivision")
     arg = request.args.get("division")
     if arg == None:
-        return render_template("selectdivisionedit.html", teams=divisions, ordered_teams=sorted(list(divisions.keys()),key=str.lower))
+        teamsbydiv = {
+            division: ', '.join([teams[x].fullName.value for x in teams if teams[x].division.value == divisions[division].fullName.value]) for
+            division in divisions}
+        return render_template("selectdivisionedit.html", divisions=divisions, ordered_divisions=sorted(list(divisions.keys()),key=str.lower),teamsbydiv=teamsbydiv)
 
     if arg in divisions:
         return render_template("editdivision.html", facility=divisions[arg])

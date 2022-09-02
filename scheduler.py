@@ -128,6 +128,8 @@ class Game:
         return c
     def csv_display_versus_with_facility(self):
         return f'"{self.date.strftime("%m/%d/%y")}","{self.rteam1.shortName}","{self.rteam2.shortName}","{self.rfacility.fullName}"'
+    def csv_display_versus_with_facility_full(self):
+        return f'"{self.date.strftime("%m/%d/%y")}","{self.rteam1.fullName}","{self.rteam2.fullName}","{self.rfacility.fullName}"'
     def csv_display_versus_no_facility(self):
         return f'"{self.rteam1.shortName} v {self.rteam2.shortName}"'
     def html_display(self):
@@ -292,7 +294,7 @@ class Schedule:
         temp_score = 0
         for team_name in self.games_by_team:
             for i in range(len(self.games_by_team[team_name])-1):
-                temp_score+=abs((self.games_by_team[team_name][i+1].date-self.games_by_team[team_name][i].date).days.real-self.optimal_distance)*9
+                temp_score+=abs((self.games_by_team[team_name][i+1].date-self.games_by_team[team_name][i].date).days.real-7)*20
         score += temp_score
         if not mute:
             print("by days off:",temp_score)
