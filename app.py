@@ -14,85 +14,110 @@ from database import Database
 import pickle
 import urllib.parse
 from flask_htpasswd import HtPasswdAuth
+import redis
+from settings import *
 
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = 'password.txt'
 app.config['FLASK_SECRET'] = 'suepr secret stirng of text dont share this with anyone '
 htpasswd = HtPasswdAuth(app)
+def connect_redis():
+    r = redis.Redis(host=redis_url,port=redis_port)
+    if not r.auth(redis_password,redis_username):
+        raise Exception("auth fail")
+    return r
 
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
 
 def load_no_play():
+    r = connect_redis()
     no_play=  set()
     no_str = ""
-    if os.path.exists("noplaydates.pickle"):
-        with open("noplaydates.pickle","rb") as f:
-            d= pickle.load(f)
-            if "noplaydates" in d:
-                no_play = d["noplaydates"]
-            if "no_str" in d:
-                no_str = d["no_str"]
+    t = r.get("noplaydates")
+    if t:
+        no_play = pickle.loads(t)
+    t = r.get("noplaydates_str")
+    if t:
+        no_str = t.decode()
     return no_play,no_str
 def save_no_play(league_wide_no_play_dates,str_league_wide_no_play_dates):
-    with open("noplaydates.pickle","wb") as f:
-        pickle.dump({"no_str":str_league_wide_no_play_dates,"noplaydates":league_wide_no_play_dates},f)
+    r = connect_redis()
+    r.set("noplaydates",pickle.dumps(league_wide_no_play_dates))
+    r.set("noplaydates_str", str_league_wide_no_play_dates)
 def load_pickle():
-
+    r = connect_redis()
     teams = {}
     divisions = {}
     facilities = {}
     master_schedules = {}
-    if os.path.exists("data.pickle"):
-        with open("data.pickle", "rb") as f:
-            d = pickle.load(f)
-            if "teams" in d:
-                teams= d["teams"]
-            if "divisions" in d:
-                divisions = d["divisions"]
-            if "facilities" in d:
-                facilities= d["facilities"]
-            if "master_schedules" in d:
-               master_schedules = d["master_schedules"]
-    return teams,divisions,facilities,master_schedules
-def save_pickle(teams,divisions,facilities,master_schedules):
 
-    t,d,f,ms =load_pickle()
-    for k in teams:
-        t[k] =teams[k]
-    for k in facilities:
-        f[k] =facilities[k]
-    for k in divisions:
-        d[k] =divisions[k]
-    for k in master_schedules:
-        ms[k] = master_schedules[k]
-    pickle_data = {"teams": t, "divisions": d, "facilities": f,
-                   "master_schedules": ms}
-    with open("data.pickle", "wb") as f:
-        pickle.dump(pickle_data, f)
+    if r.exists("teams"):
+        for i in range(r.llen("teams")):
+            temp:Team = pickle.loads(r.lindex("teams",i))
+            teams[temp.fullName.value] = temp
+
+    if r.exists("divisions"):
+        for i in range(r.llen("divisions")):
+            temp:Team = pickle.loads(r.lindex("divisions",i))
+            divisions[temp.fullName.value] = temp
+
+    if r.exists("facilities"):
+        for i in range(r.llen("facilities")):
+            temp:Team = pickle.loads(r.lindex("facilities",i))
+            facilities[temp.fullName.value] = temp
+    if r.exists("master_schedules"):
+        for i in range(r.llen("master_schedules")):
+            temp:Team = pickle.loads(r.lindex("master_schedules",i))
+            master_schedules[temp.name] = temp
+    return teams,divisions,facilities,master_schedules
+
+def add_pickle(team=None,division=None,facility=None,master_schedule=None):
+    r = connect_redis()
+    if team is not None:
+        r.lpush("teams",pickle.dumps(team))
+    if division is not None:
+        r.lpush("divisions",pickle.dumps(division))
+    if facility is not None:
+        r.lpush("facilities",pickle.dumps(facility))
+    if master_schedule is not None:
+        r.lpush("master_schedules",pickle.dumps(master_schedule))
 
 def delete_pickle(team=None,division=None,facility=None,master_schedule=None):
-    teams, divisions, facilities, master_schedules = load_pickle()
+    r = connect_redis()
     if team is not None:
-        teams.pop(team)
+        for i in range(r.llen("teams")):
+            if pickle.loads(r.lindex("teams",i)).fullName.value == team:
+                r.lset("teams",i,"$REMOVEME")
+                break
     if division is not None:
-        divisions.pop(division)
+        for i in range(r.llen("divisions")):
+            if pickle.loads(r.lindex("divisions", i)).fullName.value == division:
+                r.lset("divisions", i, "$REMOVEME")
+                break
     if facility is not None:
-        facilities.pop(facility)
-    print(facilities)
-    if master_schedule:
-        master_schedules.pop(master_schedule)
-    pickle_data = {"teams": teams, "divisions": divisions, "facilities": facilities,
-                   "master_schedules": master_schedules}
-    with open("data.pickle", "wb") as f:
-        pickle.dump(pickle_data, f)
+        for i in range(r.llen("facilities")):
+            if pickle.loads(r.lindex("facilities", i)).fullName.value == facility:
+                r.lset("facilities", i, "$REMOVEME")
+                break
+
+    if master_schedule is not None:
+        for i in range(r.llen("master_schedules")):
+            if pickle.loads(r.lindex("master_schedules", i)).name == master_schedule:
+                r.lset("master_schedules", i, "$REMOVEME")
+                break
+    r.lrem("teams",0,"$REMOVEME")
+    r.lrem("divisions",0,"$REMOVEME")
+    r.lrem("facilities",0,"$REMOVEME")
+    r.lrem("master_schedules",0,"$REMOVEME")
 
 def sched_thread(name, iterations, do_update):
     teams, divisions, facilities, master_schedules = load_pickle()
     if not do_update:
-        master = MasterSchedule(divisions, teams, facilities)
+        master = MasterSchedule(divisions, teams, facilities,name)
     else:
+
         master = master_schedules[name]
 
 
@@ -100,8 +125,9 @@ def sched_thread(name, iterations, do_update):
     result = master.generate_master_schedule(iterations, do_update)
 
     if result:
-        master_schedules[name] = result
-    save_pickle(teams,divisions,facilities,master_schedules)
+        result.name = name
+        delete_pickle(master_schedule=name)
+        add_pickle(master_schedule=result)
 
     is_scheduling = False
     is_updating = False
@@ -149,7 +175,7 @@ def delete_team(old_name):
                     to_remove.append(combo)
             for r in to_remove:
                 schedule.games_by_combo.pop(r)
-    save_pickle(teams, divisions, facilities, master_schedules)
+
 
 def delete_facility(old_name):
     teams, divisions, facilities, master_schedules = load_pickle()
@@ -169,7 +195,7 @@ def delete_facility(old_name):
         for schedule in master_sched.schedules:
             if old_name in schedule.facilities:
                 schedule.facilities.pop(old_name)
-    save_pickle(teams, divisions, facilities, master_schedules)
+
 
 def change_team(old_name, new_team: Team):
     teams, divisions, facilities, master_schedules = load_pickle()
@@ -275,7 +301,7 @@ def change_division(old_name, new_division: Division):
                 for team in schedule.games_by_team:
                     for game in schedule.games_by_team[team]:
                         game.division_name = new_division.fullName.value
-    save_pickle(teams, divisions, facilities, master_schedules)
+
 
 def generate_csv_facility(facility, master_sched: MasterSchedule):
     games = []
@@ -307,7 +333,7 @@ def clone_team(user):
     if t.fullName.value in teams:
         t.fullName.value+=" (2)"
     teams[t.fullName.value] = t
-    save_pickle(teams, divisions, facilities, master_schedules)
+    add_pickle(team=t)
 
     return flask.redirect("/edit")
 @app.route("/submitnewteam", methods=["POST"])
@@ -324,7 +350,7 @@ def add_new_team(user):
     if t.fullName.value in teams:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a team!"])
     teams[t.fullName.value] = t
-    save_pickle(teams, divisions, facilities, master_schedules)
+    add_pickle(team=t)
 
     return render_template("submitnewteam.html", data=t.properties)
 
@@ -385,7 +411,7 @@ def submit_edit_page(user):
         delete_pickle(team=request.form["teamname"])
         teams[t.fullName.value] = t
         change_team(request.form["teamname"], t)
-        save_pickle(teams, divisions, facilities, master_schedules)
+        add_pickle(team=t)
         return render_template("submiteditteam.html", data=t.properties)
 
     return "Ok this should neve everr happen. "
@@ -419,7 +445,7 @@ def submit_new_division(user):
     if t.fullName.value in divisions:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     divisions[t.fullName.value] = t
-    save_pickle(teams, divisions, facilities, master_schedules)
+    add_pickle(division=t)
     return render_template("submitnewdivision.html", data=t.properties)
 
 
@@ -486,7 +512,7 @@ def add_new_facility(user):
     if t.fullName.value in facilities:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     facilities[t.fullName.value] = t
-    save_pickle(teams, divisions, facilities, master_schedules)
+    add_pickle(facility=t)
 
     return render_template("submitnewfacility.html", data=t.properties)
 
@@ -537,7 +563,7 @@ def submit_edit_facility(user):
         facilities[t.fullName.value] = t
 
         change_facility(name, t)
-        save_pickle(teams, divisions, facilities, master_schedules)
+        add_pickle(facility=t)
         return render_template("submiteditfacility.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a facility!!"
 
@@ -558,7 +584,7 @@ def submit_edit_division(user):
         delete_pickle(division=name)
         divisions[t.fullName.value] = t
         change_division(name, t)
-        save_pickle(teams, divisions, facilities, master_schedules)
+        add_pickle(division=t)
         return render_template("submiteditdivision.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a division!!"
 
@@ -760,9 +786,18 @@ def league_settings(user):
 
 
 
+def pickle_to_redis():
 
+    with open("data.pickle","rb") as f:
+        d = pickle.load(f)
+        for t in d["teams"].values():
+            add_pickle(team=t)
+        for t in d["divisions"].values():
+            add_pickle(division=t)
+        for t in d["facilities"].values():
+            add_pickle(facility=t)
 
-
+# pickle_to_redis()
 print("cool epic on heroku")
 
 port = int(os.environ.get('PORT', 5000))  # as per OP comments default is 17995

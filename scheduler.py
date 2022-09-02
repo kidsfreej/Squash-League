@@ -614,9 +614,10 @@ class MasterSchedule:
     current_schedule = None
     cap_iterations = -1
     DEBUG_global = False
-    def __init__(self,divisions:List[Division],teams:List[Team],facilities:List[Facility]):
+    def __init__(self,divisions:List[Division],teams:List[Team],facilities:List[Facility],name):
         if divisions is None:
             return
+        self.name = name
         self.rawDivisions = {x.fullName:x for x in map(lambda x:RawDivision(divisions[x]),divisions)}
         self.rawTeams:Dict[str,RawTeam] = {x.fullName:x for x in map(lambda x:RawTeam(teams[x]),teams)}
         self.rawFacilities = {x.fullName:x for x in map(lambda x:RawFacility(facilities[x]),facilities)}
@@ -708,11 +709,12 @@ class MasterSchedule:
     def score_master(self):
         return sum(map(lambda x:x.score(),self.schedules))
     def __copy__(self):
-        c = MasterSchedule(None,None,None)
+        c = MasterSchedule(None,None,None,None)
         c.rawTeams = self.rawTeams
         c.rawDivisions = self.rawDivisions
         c.rawFacilities = self.rawFacilities
         c.schedules = list(map(copy,self.schedules))
+        c.name = self.name
         return c
     def is_available_facility_as_str(self,rawFacility:RawFacility,date:datetime.datetime):
 
