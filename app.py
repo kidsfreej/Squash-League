@@ -387,7 +387,7 @@ def edit_page(user):
 
     if arg in teams:
 
-        return render_template("editteam.html", team=teams[arg], facilities=facilities, divisions=divisions,sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()),key=lambda x:divisions[x].shortName.value.lower())
+        return render_template("editteam.html", team=teams[arg], facilities=facilities, divisions=divisions,sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()),divs=sorted(divisions.keys(),key=lambda x:divisions[x].shortName.value.lower()))
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
 
 
