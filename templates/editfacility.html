@@ -62,7 +62,7 @@
     <label>Required team(s)</label>
 
         <script>
-        var x = 0;
+        var x = {{facility.allowedTeams.value.__len__()}};
         function change(){
             var dom = document.getElementById("count");
             revised = dom.value;
@@ -77,7 +77,7 @@
                     while(counter<x){
                         var n = document.createElement("input");
                         var m = document.getElementById("here");
-                        m.innerHTML +=`<select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-`+x+`">
+                        m.innerHTML +=`<select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-`+(counter+1)+`">
                                    <option value="$none">None</option>
                         {% for team in ordered_teams %}
                     <option value="{{team}}">{{teams[team].shortName}}</option>
@@ -100,15 +100,16 @@
 
     </script>
         <input type="number" id="count" onchange="change();" placeholder="Team Count (number)" min="0" value="{{facility.allowedTeams.__len__()}}"  ><label></label><div id="here">
-    {% set i = 0 %}
+    {% set ns = namespace(i=0) %}
+    {% set ns.i = 0 %}
     {% for ateam in facility.allowedTeams.value %}
-    <select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-{{i+1}}">
+    <select onchange='if(event.target.hasAttribute(\"prev\")){event.target.options[parseInt(event.target.getAttribute(\"prev\"))].removeAttribute(\"selected\");};event.target.setAttribute(\"prev\",event.target.selectedIndex);;event.target.options[event.target.selectedIndex].setAttribute(\"selected\",\"selected\")' name="team-{{ns.i+1}}">
         <option value="$none">None</option>
         {% for team in ordered_teams %}
             <option value="{{teams[team].fullName}}" {{'selected="selected"' if ateam==teams[team].fullName.value else ""}}>{{teams[team].shortName}}</option>
         {% endfor %}
     </select>
-    {% set i = i+1 %}
+    {% set ns.i = ns.i+1 %}
     {% endfor %}
 </div>
 </span>
