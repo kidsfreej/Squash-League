@@ -425,7 +425,7 @@ def generate_csv_facility(facility, master_sched: MasterSchedule):
 def clone_team(user):
     if "team"  not in request.args:
         return "bruh"
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams,r = load_teams()
 
     team = teams[request.args["team"]]
     t = Team(team.fullName.value+" clone", team.shortName.value, team.division.value,
@@ -437,7 +437,6 @@ def clone_team(user):
         return render_template("submitnewteam_fail.html", errors=t.errors)
     if t.fullName.value in teams:
         t.fullName.value+=" (2)"
-    teams[t.fullName.value] = t
     add_pickle(redis,team=t)
 
     return flask.redirect("/edit")
@@ -463,7 +462,9 @@ def add_new_team(user):
 @app.route("/newteam", methods=["GET"])
 @htpasswd.required
 def newteam_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams,r = load_teams()
+    divisions,r = load_divisions(r)
+    facilities,r = load_facilities(r)
     try:
         return render_template("newteam.html", facilities=facilities,divisions=divisions,sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()),divs=sorted(divisions.keys(),key=lambda x:divisions[x].shortName.value.lower()))
     except Exception as e:
@@ -500,7 +501,7 @@ def edit_page(user):
 @app.route("/submitedit", methods=["POST"])
 @htpasswd.required
 def submit_edit_page(user):
-    teams, r = load_teams()
+    teams, divisions, facilities, master_schedules, r = load_pickle()
     name = request.form["teamname"]
     if name in teams:
 
@@ -526,7 +527,7 @@ def submit_edit_page(user):
 @app.route("/delete", methods=["GET"])
 @htpasswd.required
 def delete_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, r = load_teams()
     name = request.args.get("team")
     if name == None or name not in teams:
         return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a team</h1>"
@@ -585,7 +586,7 @@ def edit_division(user):
 @app.route("/deletedivision")
 @htpasswd.required
 def delete_division_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    divisions, r = load_divisions()
     name = request.args.get("division")
     if name == None:
         return "fat L"
@@ -701,7 +702,7 @@ def submit_edit_division(user):
 @app.route("/deletefacility")
 @htpasswd.required
 def delete_facility_page(user):
-    teams, divisions, facilities, master_schedules,r =load_pickle()
+    facilities,r =load_facilities()
     name = request.args.get("facility")
     if name == None or name not in facilities:
         return f"<a href='/'>Home</a> <h1>ERROR: {html.escape(name)} is not a facility</h1>"
@@ -765,7 +766,7 @@ def view_schedules(user):
     if "schedule" in request.args:
         master_schedules,r = load_master_schedules()
         schedu: MasterSchedule = master_schedules[request.args["schedule"]]
-
+        divisions=[x.division.fullName for x in schedu.schedules]
         return render_template("scheduledisplay.html", teamsByDivs={division: [x for x in schedu.rawTeams if
                                                                                schedu.rawTeams[x].division ==
                                                                                schedu.rawDivisions[division].fullName]
@@ -900,12 +901,12 @@ def league_settings(user):
 
 
 # teams, divisions, facilities, master_schedules, p = load_pickle_no_compression(connect_redis("redis-10752.c91.us-east-1-3.ec2.cloud.redislabs.com",10752,"wvhnHTE0DLXQqS5avbykMTvc8NZuAlNH","default"))
-with open("backup.pickle","rb") as f:
-    teams, divisions, facilities, master_schedules = pickle.load(f)
-r = connect_redis()
-for n,g in zip(("team","division","facility","master_schedule"),(teams, divisions, facilities, master_schedules)):
-    for t in g.values():
-        add_pickle(r,**{n:t})
+# with open("backup.pickle","rb") as f:
+#     teams, divisions, facilities, master_schedules = pickle.load(f)
+# r = connect_redis()
+# for n,g in zip(("team","division","facility","master_schedule"),(teams, divisions, facilities, master_schedules)):
+#     for t in g.values():
+#         add_pickle(r,**{n:t})
 
 # pickle_to_redis()
 print("cool epic on heroku")

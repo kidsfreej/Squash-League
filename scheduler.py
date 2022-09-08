@@ -56,12 +56,6 @@ def date_range_gen(start,end):
         cur_date+=datetime.timedelta(days=1)
     r.add(cur_date)
     return r
-teams = {}
-divisions = {}
-facilities = {}
-rawTeams = {}
-rawFacilities={}
-rawDivisions={}
 
 class RawDivision:
 
