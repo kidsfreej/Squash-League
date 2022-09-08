@@ -908,6 +908,7 @@ def league_settings(user):
 #     for t in g.values():
 #         add_pickle(r,**{n:t})
 
+
 # pickle_to_redis()
 print("cool epic on heroku")
 # with open("backup.pickle","wb") as f:
