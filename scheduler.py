@@ -50,6 +50,7 @@ def save_scheduling_data(is_scheduling=None,is_updating=None,iteration_counter=N
 def date_range_gen(start,end):
     r  = set()
     cur_date = start
+    print(start,end)
     while cur_date!=end:
         r.add(cur_date)
         cur_date+=datetime.timedelta(days=1)
@@ -68,6 +69,7 @@ class RawDivision:
         self.year = division.year.value
         self.fullName = division.fullName.value
         self.shortName = division.shortName.value
+        print(self.fullName)
         self.dates =   date_range_gen(division.start.to_datetime(),division.end.to_datetime())
         self.start = division.start.to_datetime()
         self.end = division.end.to_datetime()
@@ -184,8 +186,9 @@ class Schedule:
         x=0
         y=0
         combos = []
-        for team1 in self.teams:
-            for team2 in self.teams:
+        sorted_teams = sorted(self.teams.keys(),key=lambda x:x.lower())
+        for team1 in sorted_teams:
+            for team2 in sorted_teams:
                 if self.teams[team1]!=self.teams[team2]:
                     if team1 in self.games_by_team:
                         for game in self.games_by_team[team1]:
@@ -384,7 +387,7 @@ class Schedule:
                                 possible_games.append(Game(date,team1,team2,self.facilities[facility],self.division.fullName))
         return possible_games
     def valid(self,game:Game):
-        if game.date > game.rteam1.startDate and game.date> game.rteam2.startDate:
+        if game.date in self.division.dates and game.date > game.rteam1.startDate and game.date> game.rteam2.startDate:
             if game.date not in game.rteam1.noPlayDates and game.date not in game.rteam2.noPlayDates and game.date not in Schedule.league_wide_no_play_dates:
                 weekday = game.date.weekday()
                 if weekday not in game.rteam1.practiceDays and weekday not in game.rteam2.practiceDays:

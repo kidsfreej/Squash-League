@@ -15,17 +15,21 @@ import urllib.parse
 from flask_htpasswd import HtPasswdAuth
 import redis
 from settings import *
-
+import zlib
 app = Flask(__name__)
 app.config['FLASK_HTPASSWD_PATH'] = 'password.txt'
 app.config['FLASK_SECRET'] = 'suepr secret stirng of text dont share this with anyone '
 htpasswd = HtPasswdAuth(app)
-def connect_redis():
-    r = redis.Redis(host=redis_url,port=redis_port)
-    if not r.auth(redis_password,redis_username):
+def connect_redis(url=None,port=None,password=None,username=None):
+    if url is None:
+        r = redis.Redis(host=redis_url,port=redis_port)
+        if not r.auth(redis_password,redis_username):
+            raise Exception("auth fail")
+        return r
+    r = redis.Redis(host=url, port=port)
+    if not r.auth(password, username):
         raise Exception("auth fail")
     return r
-
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
@@ -53,55 +57,119 @@ def load_pickle()->tuple[Dict[str,Team],Dict[str,Division],Dict[str,Facility],Di
     master_schedules = {}
 
     if r.exists("teams"):
+        for x in r.lrange("teams",0,r.llen("teams")-1):
+            temp:Team = pickle.loads(zlib.decompress(x))
+            teams[temp.fullName.value] = temp
+
+    if r.exists("divisions"):
+        for x in r.lrange("divisions",0,r.llen("divisions")-1):
+            temp:Division = pickle.loads(zlib.decompress(x))
+            divisions[temp.fullName.value] = temp
+
+    if r.exists("facilities"):
+        for x in r.lrange("facilities",0,r.llen("facilities")-1):
+            temp:Facility = pickle.loads(zlib.decompress(x))
+            facilities[temp.fullName.value] = temp
+    if r.exists("master_schedules"):
+        for x in r.lrange("master_schedules",0,r.llen("master_schedules")-1):
+            temp:MasterSchedule = pickle.loads(zlib.decompress(x))
+            master_schedules[temp.name] = temp
+    return teams,divisions,facilities,master_schedules,r
+def load_master_schedules(r=None):
+    master_schedules = {}
+    if r is None:
+        r = connect_redis()
+    if r.exists("master_schedules"):
+        for x in r.lrange("master_schedules",0,r.llen("master_schedules")-1):
+            temp:MasterSchedule = pickle.loads(zlib.decompress(x))
+            master_schedules[temp.name] = temp
+    return master_schedules,r
+def load_divisions(r=None):
+    divisions = {}
+    if r is None:
+        r= connect_redis()
+    if r.exists("divisions"):
+        for x in r.lrange("divisions",0,r.llen("divisions")-1):
+            temp:Division = pickle.loads(zlib.decompress(x))
+            divisions[temp.fullName.value] = temp
+
+
+    return divisions,r
+def load_facilities(r= None):
+    facilities = {}
+    if r is None:
+        r = connect_redis()
+    if r.exists("facilities"):
+        for x in r.lrange("facilities",0,r.llen("facilities")-1):
+            temp:Facility = pickle.loads(zlib.decompress(x))
+            facilities[temp.fullName.value] = temp
+    return facilities,r
+def load_teams(r=None):
+    teams = {}
+    if r is None:
+        r = connect_redis()
+    if r.exists("teams"):
+        for x in r.lrange("teams",0,r.llen("teams")-1):
+            temp:Team = pickle.loads(zlib.decompress(x))
+            teams[temp.fullName.value] = temp
+    return teams,r
+def load_pickle_no_compression(r)->tuple[Dict[str,Team],Dict[str,Division],Dict[str,Facility],Dict[str,MasterSchedule],redis.Redis]:
+
+    teams = {}
+    divisions = {}
+    facilities = {}
+    master_schedules = {}
+
+    if r.exists("teams"):
         for i in range(r.llen("teams")):
-            temp:Team = pickle.loads(r.lindex("teams",i))
+            temp:Team = pickle.loads((r.lindex("teams",i)))
             teams[temp.fullName.value] = temp
 
     if r.exists("divisions"):
         for i in range(r.llen("divisions")):
-            temp:Division = pickle.loads(r.lindex("divisions",i))
+            temp:Division = pickle.loads((r.lindex("divisions",i)))
             divisions[temp.fullName.value] = temp
 
     if r.exists("facilities"):
         for i in range(r.llen("facilities")):
-            temp:Facility = pickle.loads(r.lindex("facilities",i))
+            temp:Facility = pickle.loads((r.lindex("facilities",i)))
             facilities[temp.fullName.value] = temp
     if r.exists("master_schedules"):
         for i in range(r.llen("master_schedules")):
-            temp:MasterSchedule = pickle.loads(r.lindex("master_schedules",i))
+            temp:MasterSchedule = pickle.loads((r.lindex("master_schedules",i)))
             master_schedules[temp.name] = temp
     return teams,divisions,facilities,master_schedules,r
 
 def add_pickle(r,team=None,division=None,facility=None,master_schedule=None):
     if team is not None:
-        r.lpush("teams",pickle.dumps(team))
+        r.lpush("teams",zlib.compress(pickle.dumps(team)))
     if division is not None:
-        r.lpush("divisions",pickle.dumps(division))
+        r.lpush("divisions",zlib.compress(pickle.dumps(division)))
     if facility is not None:
-        r.lpush("facilities",pickle.dumps(facility))
+        r.lpush("facilities",zlib.compress(pickle.dumps(facility)))
     if master_schedule is not None:
-        r.lpush("master_schedules",pickle.dumps(master_schedule))
+        r.lpush("master_schedules",zlib.compress(pickle.dumps(master_schedule)))
 
 def delete_pickle(r,team=None,division=None,facility=None,master_schedule=None):
     if team is not None:
         for i in range(r.llen("teams")):
-            if pickle.loads(r.lindex("teams",i)).fullName.value == team:
+            if pickle.loads(zlib.decompress(r.lindex("teams",i))).fullName.value == team:
                 r.lset("teams",i,"$REMOVEME")
                 break
     if division is not None:
         for i in range(r.llen("divisions")):
-            if pickle.loads(r.lindex("divisions", i)).fullName.value == division:
+            if pickle.loads(zlib.decompress(r.lindex("divisions", i))).fullName.value == division:
                 r.lset("divisions", i, "$REMOVEME")
                 break
     if facility is not None:
         for i in range(r.llen("facilities")):
-            if pickle.loads(r.lindex("facilities", i)).fullName.value == facility:
+            if pickle.loads(zlib.decompress(r.lindex("facilities", i))).fullName.value == facility:
                 r.lset("facilities", i, "$REMOVEME")
                 break
 
     if master_schedule is not None:
         for i in range(r.llen("master_schedules")):
-            if pickle.loads(r.lindex("master_schedules", i)).name == master_schedule:
+            if pickle.loads(zlib.decompress(r.lindex("master_schedules", i))).name == master_schedule:
                 r.lset("master_schedules", i, "$REMOVEME")
                 break
     r.lrem("teams",0,"$REMOVEME")
@@ -198,24 +266,24 @@ def delete_facility(old_name):
 def edit_pickle(r:redis.Redis,teams:Dict[str,Team]=None, divisions=None, facilities=None, master_schedules=None):
     if teams is not None:
         for i in range(r.llen("teams")):
-            temp: Team = pickle.loads(r.lindex("teams", i))
+            temp: Team = pickle.loads(zlib.decompress(r.lindex("teams", i)))
             if temp.fullName.value in teams:
-                r.lset("teams",i,pickle.dumps(teams[temp.fullName.value]))
+                r.lset("teams",i,zlib.compress(pickle.dumps(teams[temp.fullName.value])))
     if divisions is not None:
         for i in range(r.llen("divisions")):
-            temp: Division = pickle.loads(r.lindex("divisions", i))
+            temp: Division = pickle.loads(zlib.decompress(r.lindex("divisions", i)))
             if temp.fullName.value in divisions:
-                r.lset("divisions",i,pickle.dumps(divisions[temp.fullName.value]))
+                r.lset("divisions",i,zlib.compress(pickle.dumps(divisions[temp.fullName.value])))
     if facilities is not None:
         for i in range(r.llen("facilities")):
-            temp: Facility = pickle.loads(r.lindex("facilities", i))
+            temp: Facility = pickle.loads(zlib.decompress(r.lindex("facilities", i)))
             if temp.fullName.value in facilities:
-                r.lset("facilities",i,pickle.dumps(facilities[temp.fullName.value]))
+                r.lset("facilities",i,zlib.compress(pickle.dumps(facilities[temp.fullName.value])))
     if master_schedules is not None:
         for i in range(r.llen("master_schedules")):
-            temp: MasterSchedule = pickle.loads(r.lindex("master_schedules", i))
+            temp: MasterSchedule = pickle.loads(zlib.decompress(r.lindex("master_schedules", i)))
             if temp.name in master_schedules:
-                r.lset("master_schedules",i,pickle.dumps(master_schedules[temp.name]))
+                r.lset("master_schedules",i,zlib.compress(pickle.dumps(master_schedules[temp.name])))
 def change_team(old_name, new_team: Team,teams, divisions, facilities, master_schedules,r:redis.Redis):
 
     facilities_to_change = {}
@@ -376,7 +444,7 @@ def clone_team(user):
 @app.route("/submitnewteam", methods=["POST"])
 @htpasswd.required
 def add_new_team(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, redis = load_teams()
     t = Team(request.form["fullName"], request.form["shortName"], request.form["division"],
              Weekdays.parse_weekdays(request.form, "practiceDays"), request.form["homeFacility"],
              request.form["alternativeFacility"], request.form["noPlayDates"],
@@ -411,18 +479,20 @@ def index_page(user):
 @app.route("/edit", methods=["POST", "GET"])
 @htpasswd.required
 def edit_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, r = load_teams()
     if request.method == "POST":
         if request.form["delete"] not in teams:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Team does not exit!"
         delete_team(request.form["delete"])
-        delete_pickle(redis,team=request.form["delete"])
+        delete_pickle(r,team=request.form["delete"])
         return flask.redirect("/edit")
     arg = request.args.get("team")
     if arg == None:
         return render_template("selectteamedit.html", teams=teams, ordered_teams=sorted(list(teams.keys()),key=str.lower))
 
     if arg in teams:
+        facilities,r = load_facilities(r)
+        divisions,r = load_divisions(r)
         return render_template("editteam.html", team=teams[arg], facilities=facilities, divisions=divisions,sfacs=sorted(facilities.keys(),key=lambda x:facilities[x].shortName.value.lower()),divs=sorted(divisions.keys(),key=lambda x:divisions[x].shortName.value.lower()))
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
 
@@ -430,7 +500,7 @@ def edit_page(user):
 @app.route("/submitedit", methods=["POST"])
 @htpasswd.required
 def submit_edit_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, r = load_teams()
     name = request.form["teamname"]
     if name in teams:
 
@@ -444,12 +514,12 @@ def submit_edit_page(user):
             return render_template("submitnewteam_fail.html", errors=t.errors)
 
         teams.pop(request.form["teamname"])
-        delete_pickle(redis,team=request.form["teamname"])
+        delete_pickle(r,team=request.form["teamname"])
         teams[t.fullName.value] = t
-        change_team(request.form["teamname"], t,teams, divisions, facilities, master_schedules, redis)
-        add_pickle(redis,team=t)
+        change_team(request.form["teamname"], t,teams, divisions, facilities, master_schedules, r)
+        add_pickle(r,team=t)
         return render_template("submiteditteam.html", data=t.properties)
-
+    print(teams)
     return "Ok this should neve everr happen. "
 
 
@@ -488,18 +558,20 @@ def submit_new_division(user):
 @app.route("/editdivision", methods=["GET", "POST"])
 @htpasswd.required
 def edit_division(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    divisions, r = load_divisions()
     if request.method == "POST":
+        teams,r = load_teams(r)
         if request.form["delete"] not in divisions:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Division does not exit!"
         divisions.pop(request.form["delete"])
         for team in teams:
             if teams[team].division.value == request.form["delete"]:
                 teams[team].division.value = None
-        delete_pickle(redis,division=request.form["delete"])
+        delete_pickle(r,division=request.form["delete"])
         return flask.redirect("/editdivision")
     arg = request.args.get("division")
     if arg == None:
+        teams,r = load_teams(r)
         teamsbydiv = {
             division: ', '.join([teams[x].fullName.value for x in teams if teams[x].division.value == divisions[division].fullName.value]) for
             division in divisions}
@@ -556,13 +628,13 @@ def add_new_facility(user):
 @app.route("/editfacilities", methods=["GET", "POST"])
 @htpasswd.required
 def edit_facilities(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    facilities, r = load_facilities()
     if request.method == "POST":
         if request.form["delete"] not in facilities:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
         delete_facility(request.form["delete"])
 
-        delete_pickle(redis,facility=request.form["delete"])
+        delete_pickle(r,facility=request.form["delete"])
         return flask.redirect("/editfacilities")
     arg = request.args.get("facility")
     if arg == None:
@@ -570,6 +642,7 @@ def edit_facilities(user):
                                ordered_teams=sorted(list(facilities.keys()),key=lambda x:x.lower()))
 
     if arg in facilities:
+        teams,r = load_teams(r)
         return render_template("editfacility.html", facility=facilities[arg], teams=teams,ordered_teams=sorted(list(teams.keys()),key=lambda x: teams[x].shortName.value.lower()))
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(arg)} does not exist<br><a href='edit'>Edit</a>"
 
@@ -638,14 +711,14 @@ def delete_facility_page(user):
 @app.route("/generateschedule", methods=["POST", "GET"])
 @htpasswd.required
 def generate_schedule_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+
     is_scheduling,is_updating,iteration_counter,current_schedule,cap_iterations = load_scheduling_data()
     if is_scheduling:
         return flask.redirect("/loadingscreenpost?name=" + urllib.parse.quote_plus(current_schedule))
     if is_updating:
         return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(current_schedule))
     if 'iterations' in request.form:
-
+        teams, divisions, facilities, master_schedules, redis = load_pickle()
         if request.form["name"] in master_schedules:
             return "schedule with name already exists"
 
@@ -661,7 +734,7 @@ def generate_schedule_page(user):
         return render_template("loadingscreen.html", iters=iteration_counter,
                                maxiters=cap_iterations, name=request.form["name"])
 
-    return render_template("generateschedule.html", divisions=divisions)
+    return render_template("generateschedule.html")
 
 
 @app.route("/loadingscreenpost", methods=["GET"])
@@ -674,7 +747,7 @@ def loading_screen(user):
     if is_scheduling:
         return render_template("loadingscreen.html", iters=iteration_counter,
                                maxiters=cap_iterations, name=request.args["name"])
-    # print("wow nothing:",master_schedules)
+
     return flask.redirect("/")
 
 
@@ -688,9 +761,11 @@ def cancel_scheduler(user):
 @app.route("/viewschedules", methods=["GET", "POST"])
 @htpasswd.required
 def view_schedules(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+
     if "schedule" in request.args:
+        master_schedules,r = load_master_schedules()
         schedu: MasterSchedule = master_schedules[request.args["schedule"]]
+
         return render_template("scheduledisplay.html", teamsByDivs={division: [x for x in schedu.rawTeams if
                                                                                schedu.rawTeams[x].division ==
                                                                                schedu.rawDivisions[division].fullName]
@@ -698,6 +773,8 @@ def view_schedules(user):
                                divisions=divisions,
                                scheduleArr=list(map(Schedule.games_in_table_order, schedu.schedules)),
                                name=request.args["schedule"], enum=enumerate)
+
+    master_schedules,r = load_master_schedules()
     return render_template("viewschedules.html", schedules=master_schedules)
 
 
@@ -822,22 +899,22 @@ def league_settings(user):
 
 
 
-def pickle_to_redis():
-    redis = connect_redis()
-    with open("data.pickle","rb") as f:
-        d = pickle.load(f)
-        for t in d["teams"].values():
-            add_pickle(redis,team=t)
-        for t in d["divisions"].values():
-            add_pickle(redis,division=t)
-        for t in d["facilities"].values():
-            add_pickle(redis,facility=t)
+# teams, divisions, facilities, master_schedules, p = load_pickle_no_compression(connect_redis("redis-10752.c91.us-east-1-3.ec2.cloud.redislabs.com",10752,"wvhnHTE0DLXQqS5avbykMTvc8NZuAlNH","default"))
+with open("backup.pickle","rb") as f:
+    teams, divisions, facilities, master_schedules = pickle.load(f)
+r = connect_redis()
+for n,g in zip(("team","division","facility","master_schedule"),(teams, divisions, facilities, master_schedules)):
+    for t in g.values():
+        add_pickle(r,**{n:t})
 
 # pickle_to_redis()
 print("cool epic on heroku")
-
+# with open("backup.pickle","wb") as f:
+#     pickle.dump(load_pickle()[:-1],f)
 port = int(os.environ.get('PORT', 5000))  # as per OP comments default is 17995
 if __name__ == "__main__":
 
 
     app.run(port=port)
+
+#Briarcliff Boys Varsity got deleted
