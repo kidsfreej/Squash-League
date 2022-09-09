@@ -836,7 +836,7 @@ def delete_schedule(user):
     master_schedules, r = load_master_schedules()
     if request.method == 'POST':
         if request.form["name"] in master_schedules:
-            delete_pickle(redis,master_schedule=request.form["name"])
+            delete_pickle(r,master_schedule=request.form["name"])
             return flask.redirect("/viewschedules")
 
         return "error related to delete schedule"
