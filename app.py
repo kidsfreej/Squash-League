@@ -437,13 +437,13 @@ def clone_team(user):
         return render_template("submitnewteam_fail.html", errors=t.errors)
     if t.fullName.value in teams:
         t.fullName.value+=" (2)"
-    add_pickle(redis,team=t)
+    add_pickle(r,team=t)
 
     return flask.redirect("/edit")
 @app.route("/submitnewteam", methods=["POST"])
 @htpasswd.required
 def add_new_team(user):
-    teams, redis = load_teams()
+    teams, r = load_teams()
     t = Team(request.form["fullName"], request.form["shortName"], request.form["division"],
              Weekdays.parse_weekdays(request.form, "practiceDays"), request.form["homeFacility"],
              request.form["alternativeFacility"], request.form["noPlayDates"],
@@ -454,7 +454,7 @@ def add_new_team(user):
     if t.fullName.value in teams:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a team!"])
     teams[t.fullName.value] = t
-    add_pickle(redis,team=t)
+    add_pickle(r,team=t)
 
     return render_template("submitnewteam.html", data=t.properties)
 
@@ -544,7 +544,7 @@ def new_division(user):
 @app.route("/submitnewdivision", methods=["POST"])
 @htpasswd.required
 def submit_new_division(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, divisions, facilities, master_schedules, r = load_pickle()
     t = Division(request.form["year"], request.form["fullName"], request.form["shortName"],
                  request.form["start"], request.form["end"])
     if len(t.errors) > 0:
@@ -552,7 +552,7 @@ def submit_new_division(user):
     if t.fullName.value in divisions:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     divisions[t.fullName.value] = t
-    add_pickle(redis,division=t)
+    add_pickle(r,division=t)
     return render_template("submitnewdivision.html", data=t.properties)
 
 
@@ -598,14 +598,14 @@ def delete_division_page(user):
 @app.route("/newfacility")
 @htpasswd.required
 def new_facility_page(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, divisions, facilities, master_schedules, r = load_pickle()
     return render_template("newfacility.html", teams=teams,ordered_teams=sorted(list(teams.keys()),key=lambda x: teams[x].shortName.value.lower()))
 
 
 @app.route("/submitnewfacility", methods=["POST"])
 @htpasswd.required
 def add_new_facility(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, divisions, facilities, master_schedules, r = load_pickle()
     parsed_teams = []
     for i in range(1, len(teams)+1):
         if "team-" + str(i) in request.form:
@@ -621,7 +621,7 @@ def add_new_facility(user):
     if t.fullName.value in facilities:
         return render_template("submitnewteam_fail.html", errors=[t.fullName.value + " is already a facility!"])
     facilities[t.fullName.value] = t
-    add_pickle(redis,facility=t)
+    add_pickle(r,facility=t)
 
     return render_template("submitnewfacility.html", data=t.properties)
 
@@ -651,7 +651,7 @@ def edit_facilities(user):
 @app.route("/submiteditfacility", methods=["POST"])
 @htpasswd.required
 def submit_edit_facility(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, divisions, facilities, master_schedules, r = load_pickle()
     name = request.form["facilityname"]
     if name in facilities:
 
@@ -669,11 +669,11 @@ def submit_edit_facility(user):
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
         facilities.pop(name)
-        delete_pickle(redis,facility=name)
+        delete_pickle(r,facility=name)
         facilities[t.fullName.value] = t
 
-        change_facility(name, t,teams, divisions, facilities, master_schedules, redis)
-        add_pickle(redis,facility=t)
+        change_facility(name, t,teams, divisions, facilities, master_schedules, r)
+        add_pickle(r,facility=t)
         return render_template("submiteditfacility.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a facility!!"
 
@@ -681,7 +681,7 @@ def submit_edit_facility(user):
 @app.route("/submiteditdivision", methods=["POST"])
 @htpasswd.required
 def submit_edit_division(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    teams, divisions, facilities, master_schedules, r = load_pickle()
     name = request.form["divisionname"]
     if name in divisions:
 
@@ -691,10 +691,10 @@ def submit_edit_division(user):
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
         divisions.pop(name)
-        delete_pickle(redis,division=name)
+        delete_pickle(r,division=name)
         divisions[t.fullName.value] = t
-        change_division(name, t,teams, divisions, facilities, master_schedules, redis)
-        add_pickle(redis,division=t)
+        change_division(name, t,teams, divisions, facilities, master_schedules, r)
+        add_pickle(r,division=t)
         return render_template("submiteditdivision.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a division!!"
 
@@ -719,7 +719,7 @@ def generate_schedule_page(user):
     if is_updating:
         return flask.redirect("/loadingscreenupdate?name=" + urllib.parse.quote_plus(current_schedule))
     if 'iterations' in request.form:
-        teams, divisions, facilities, master_schedules, redis = load_pickle()
+        teams, divisions, facilities, master_schedules, r = load_pickle()
         if request.form["name"] in master_schedules:
             return "schedule with name already exists"
 
