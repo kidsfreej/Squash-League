@@ -767,9 +767,9 @@ def view_schedules(user):
         master_schedules,r = load_master_schedules()
         schedu: MasterSchedule = master_schedules[request.args["schedule"]]
         divisions=[x.division.fullName for x in schedu.schedules]
-        return render_template("scheduledisplay.html", teamsByDivs={division: [x for x in schedu.rawTeams if
+        return render_template("scheduledisplay.html", teamsByDivs={division: sorted([x for x in schedu.rawTeams if
                                                                                schedu.rawTeams[x].division ==
-                                                                               schedu.rawDivisions[division].fullName]
+                                                                               schedu.rawDivisions[division].fullName],key=lambda x:x.lower())
                                                                     for division in schedu.rawDivisions},
                                divisions=divisions,
                                scheduleArr=list(map(Schedule.games_in_table_order, schedu.schedules)),
@@ -833,12 +833,13 @@ def download_by_facility(user):
 @app.route("/deleteschedule", methods=["GET", "POST"])
 @htpasswd.required
 def delete_schedule(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+    master_schedules, r = load_master_schedules()
     if request.method == 'POST':
         if request.form["name"] in master_schedules:
             delete_pickle(redis,master_schedule=request.form["name"])
             return flask.redirect("/viewschedules")
-        return "bruuuh error related to delete schedule"
+
+        return "error related to delete schedule"
     if "schedule" in request.args:
         if request.args["schedule"] not in master_schedules:
             return "Unknown Schedule"
