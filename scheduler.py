@@ -195,12 +195,13 @@ class Schedule:
 
         return d
     def as_csv(self):
-        ordered= list(self.teams.keys())
+
+        sorted_teams = sorted(self.teams.keys(), key=lambda x: x.lower())
         s="\n"+","*(len(self.teams)//2)+self.division.fullName+"\n"
-        s+= ","+",".join(ordered)
+        s+= ","+",".join(sorted_teams)
         d = self.games_in_table_order()
         for y in range(len(d)):
-            s+="\n\""+ordered[y]+"\","+",".join(list(map(lambda x:'"' + x.html_display()+'"' if x is not None else "-",d[y])))
+            s+="\n\""+sorted_teams[y]+"\","+",".join(list(map(lambda x:'"' + x.html_display()+'"' if x is not None else "-",d[y])))
         return s
     def add_game(self,game:Game):
         if game.date not in self.games:
