@@ -25,7 +25,7 @@ td, th {
 <a href="/">Home</a>
 <h1>Schedule Display</h1>
 
-            {% set ns = namespace(i=0) %}
+
 {% for division in divisions%}
 <h2>Division: {{division}}</h2>
 <a href="/downloadschedule?schedule={{urlparse(name)}}&division={{urlparse(division)}}">Download division csv</a><br><br>
@@ -42,7 +42,7 @@ td, th {
                 <th>{{teamsByDivs[division][y]}}</th>
                 {% for x in range(teamsByDivs[division].__len__()) %}
                     <td>
-                        {{scheduleArr[ns.i][y][x].html_display() if scheduleArr[ns.i][y][x] else '-'}}
+                        {{scheduleArr[division][y][x].html_display() if scheduleArr[division][y][x] else '-'}}
                     </td>
                 {% endfor %}
             </tr>
@@ -50,7 +50,7 @@ td, th {
 
     </table>
 <br><br><br>
-            {% set ns.i = ns.i+1 %}
+
 {% endfor %}<br><br>
 <a href="/downloadschedule?schedule={{urlparse(name)}}" style="font-size:30px">Download as master csv</a><br><br>
 <a href="/viewschedules" style="font-size:25px">View Schedules</a>

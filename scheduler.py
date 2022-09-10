@@ -241,7 +241,7 @@ class Schedule:
                 self.games_by_team[game.rteam2.fullName].pop(i)
                 break
             i+=1
-    def     remove_game(self,game:Game):
+    def remove_game(self,game:Game):
         self.games[game.date].remove(game)
         self.team_home_plays[game.rteam1.fullName] -=1 if game.rfacility.fullName== game.rteam1.homeFacility else 0
         self.team_away_plays[game.rteam1.fullName] -=1 if game.rfacility.fullName!= game.rteam1.homeFacility else 0
@@ -338,6 +338,9 @@ class Schedule:
 
         self.sudoku_no_copy()
         return
+    def erase_game(self,game:Game):
+        self.remove_game(game)
+        self.games_by_combo.pop((game.rteam1,game.rteam2))
     def recurse(self):
         return self.recurse()
 
@@ -347,7 +350,7 @@ class Schedule:
             if date > team1.startDate and date>team2.startDate:
                 if date not in team1.noPlayDates and date not in team2.noPlayDates and date not in Schedule.league_wide_no_play_dates:
                     weekday = date.weekday()
-                    if weekday not in team1.practiceDays and weekday not in team2.practiceDays:
+                    if weekday not in team1.practiceDays and weekday not in team2.practiceDays and weekday not in team1.noMatchDays and weekday not in team2.noMatchDays:
 
 
                         for facility in self.facilities:
@@ -381,10 +384,11 @@ class Schedule:
                                 possible_games.append(Game(date,team1,team2,self.facilities[facility],self.division.fullName))
         return possible_games
     def valid(self,game:Game):
+
         if game.date in self.division.dates and game.date > game.rteam1.startDate and game.date> game.rteam2.startDate:
             if game.date not in game.rteam1.noPlayDates and game.date not in game.rteam2.noPlayDates and game.date not in Schedule.league_wide_no_play_dates:
                 weekday = game.date.weekday()
-                if weekday not in game.rteam1.practiceDays and weekday not in game.rteam2.practiceDays:
+                if weekday not in game.rteam1.practiceDays and weekday not in game.rteam2.practiceDays and weekday not in game.rteam1.noMatchDays and weekday not in game.rteam2.noMatchDays:
                     if game.rteam1.homeMatchPCT >99 and game.rteam1.homeFacility!=game.rfacility.fullName or game.rteam2.homeMatchPCT>99 and game.rteam2.homeFacility!=game.rfacility.fullName:
                         return False
                     if not(len(self.facilities[game.rfacility.fullName].allowedTeams)==0 or game.rteam1.fullName in self.facilities[game.rfacility.fullName].allowedTeams or game.rteam2.fullName in self.facilities[game.rfacility.fullName].allowedTeams):
@@ -518,7 +522,7 @@ class Schedule:
                     current.remove_game(game)
                 current.team_combos.append(combo)
                 current.games_by_combo[combo] = None
-
+            print(games_to_change)
         DEBUG_scores = []
         best_score = 99999999
         visits_by_combo  ={}
@@ -622,6 +626,7 @@ class MasterSchedule:
 
         self.schedules : List[Schedule]= [Schedule(self.rawDivisions[div],{x:self.rawTeams[x] for x in self.rawTeams if self.rawTeams[x].division==div},self.rawFacilities,self) for div in self.rawDivisions]
         self.creationDate = "never"
+        self.tableForm = None
     def conflicts(self)->Dict[str,Dict[datetime.datetime,List[Game]]]:
         shuffled = [x for x in self.schedules]
         games_dict = {}

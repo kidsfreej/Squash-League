@@ -212,41 +212,51 @@ def generate_schedule_thread(name, iterations, do_update=False):
     threading.Thread(target=sched_thread, args=(name, iterations, do_update)).start()
 
 
-def delete_team(old_name):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+def delete_team(old_name,teams, divisions, facilities, master_schedules,red):
+    facilities_to_change = {}
+    scheds_to_change = {}
     for fac_name in facilities:
         if old_name in facilities[fac_name].allowedTeams.value:
             facilities[fac_name].allowedTeams.value.remove(old_name)
+            facilities_to_change[fac_name] = facilities[fac_name]
     for master_sched in master_schedules.values():
         if old_name in master_sched.rawTeams:
             master_sched.rawTeams.pop(old_name)
+            scheds_to_change[master_sched.name] = master_sched
         for schedule in master_sched.schedules:
             if old_name in schedule.teams:
                 schedule.teams.pop(old_name)
+                scheds_to_change[master_sched.name] = master_sched
             if old_name in schedule.games_by_team:
                 schedule.games_by_team.pop(old_name)
+                scheds_to_change[master_sched.name] = master_sched
             if old_name in schedule.team_home_plays:
                 schedule.team_home_plays.pop(old_name)
+                scheds_to_change[master_sched.name] = master_sched
             if old_name in schedule.team_away_plays:
                 schedule.team_away_plays.pop(old_name)
+                scheds_to_change[master_sched.name] = master_sched
 
             for date in schedule.games:
                 to_remove = []
                 for game in schedule.games[date]:
                     if game.rteam1.fullName == old_name or game.rteam2.fullName == old_name:
                         to_remove.append(game)
+                        scheds_to_change[master_sched.name] = master_sched
                 for r in to_remove:
                     schedule.games[date].remove(r)
             to_remove = []
             for combo, game in schedule.games_by_combo_gen():
                 if old_name in (combo[0].fullName, combo[1].fullName):
                     to_remove.append(combo)
+                    scheds_to_change[master_sched.name] = master_sched
             for r in to_remove:
                 schedule.games_by_combo.pop(r)
+                scheds_to_change[master_sched.name] = master_sched
+    edit_pickle(red,facilities=facilities_to_change)
 
-
-def delete_facility(old_name):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
+def delete_facility(old_name,teams, divisions, facilities, master_schedules,red):
+    facilities.pop(old_name)
     for team in teams:
         either = False
         if teams[team].homeFacility.value == old_name:
@@ -256,35 +266,47 @@ def delete_facility(old_name):
             teams[team].alternateFacility.value = None
             either = True
         if either:
-            change_team(team, teams[team],teams, divisions, facilities, master_schedules,redis)
+            change_team(team, teams[team],teams, divisions, facilities, master_schedules,red)
+    changed_masters = {}
     for master_sched in master_schedules.values():
         if old_name in master_sched.rawFacilities:
             master_sched.rawFacilities.pop(old_name)
+            changed_masters[master_sched.name] = master_sched
         for schedule in master_sched.schedules:
             if old_name in schedule.facilities:
                 schedule.facilities.pop(old_name)
+                changed_masters[master_sched.name] = master_sched
+            to_remove_games = []
+            for date in schedule.games:
+                for game in schedule.games[date]:
+                   if game.rfacility.fullName == old_name:
+                        to_remove_games.append(game)
+            for game in to_remove_games:
+                schedule.erase_game(game)
+    edit_pickle(red,master_schedules=changed_masters)
 def edit_pickle(r:redis.Redis,teams:Dict[str,Team]=None, divisions=None, facilities=None, master_schedules=None):
-    if teams is not None:
+    if teams is not None and len(teams)!=0:
         for i in range(r.llen("teams")):
             temp: Team = pickle.loads(zlib.decompress(r.lindex("teams", i)))
             if temp.fullName.value in teams:
                 r.lset("teams",i,zlib.compress(pickle.dumps(teams[temp.fullName.value])))
-    if divisions is not None:
+    if divisions is not None and len(divisions)!=0:
         for i in range(r.llen("divisions")):
             temp: Division = pickle.loads(zlib.decompress(r.lindex("divisions", i)))
             if temp.fullName.value in divisions:
                 r.lset("divisions",i,zlib.compress(pickle.dumps(divisions[temp.fullName.value])))
-    if facilities is not None:
+    if facilities is not None and len(facilities)!=0:
         for i in range(r.llen("facilities")):
             temp: Facility = pickle.loads(zlib.decompress(r.lindex("facilities", i)))
             if temp.fullName.value in facilities:
                 r.lset("facilities",i,zlib.compress(pickle.dumps(facilities[temp.fullName.value])))
-    if master_schedules is not None:
+    if master_schedules is not None and len(master_schedules)!=0:
         for i in range(r.llen("master_schedules")):
             temp: MasterSchedule = pickle.loads(zlib.decompress(r.lindex("master_schedules", i)))
             if temp.name in master_schedules:
                 r.lset("master_schedules",i,zlib.compress(pickle.dumps(master_schedules[temp.name])))
 def change_team(old_name, new_team: Team,teams, divisions, facilities, master_schedules,r:redis.Redis):
+
 
     facilities_to_change = {}
     schedules_to_change = {}
@@ -484,7 +506,10 @@ def edit_page(user):
     if request.method == "POST":
         if request.form["delete"] not in teams:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Team does not exit!"
-        delete_team(request.form["delete"])
+        divisions, r= load_divisions(r)
+        facilities,r = load_facilities(r)
+        master_schedules,r = load_master_schedules(r)
+        delete_team(request.form["delete"],teams,divisions,facilities,master_schedules,r)
         delete_pickle(r,team=request.form["delete"])
         return flask.redirect("/edit")
     arg = request.args.get("team")
@@ -514,9 +539,8 @@ def submit_edit_page(user):
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
 
-        teams.pop(request.form["teamname"])
+        print(request.form["teamname"])
         delete_pickle(r,team=request.form["teamname"])
-        teams[t.fullName.value] = t
         change_team(request.form["teamname"], t,teams, divisions, facilities, master_schedules, r)
         add_pickle(r,team=t)
         return render_template("submiteditteam.html", data=t.properties)
@@ -633,7 +657,8 @@ def edit_facilities(user):
     if request.method == "POST":
         if request.form["delete"] not in facilities:
             return "<a href='/'>Home</a><br><h1>ERROR!</h1>Facility does not exit!"
-        delete_facility(request.form["delete"])
+        teams, divisions, facilities, master_schedules, red = load_pickle()
+        delete_facility(request.form["delete"],teams, divisions, facilities, master_schedules, red)
 
         delete_pickle(r,facility=request.form["delete"])
         return flask.redirect("/editfacilities")
@@ -741,15 +766,13 @@ def generate_schedule_page(user):
 @app.route("/loadingscreenpost", methods=["GET"])
 @htpasswd.required
 def loading_screen(user):
-    teams, divisions, facilities, master_schedules, redis = load_pickle()
     is_scheduling, is_updating, iteration_counter, current_schedule, cap_iterations = load_scheduling_data()
-    if request.args["name"] in master_schedules:
-        return flask.redirect("/viewschedules?schedule=" + urllib.parse.quote_plus(request.args["name"]))
+
+
     if is_scheduling:
         return render_template("loadingscreen.html", iters=iteration_counter,
                                maxiters=cap_iterations, name=request.args["name"])
-
-    return flask.redirect("/")
+    return flask.redirect("/viewschedules?schedule=" + urllib.parse.quote_plus(request.args["name"]))
 
 
 @app.route("/cancelscheduler", methods=["POST"])
@@ -767,12 +790,11 @@ def view_schedules(user):
         master_schedules,r = load_master_schedules()
         schedu: MasterSchedule = master_schedules[request.args["schedule"]]
         divisions=[x.division.fullName for x in schedu.schedules]
-        return render_template("scheduledisplay.html", teamsByDivs={division: sorted([x for x in schedu.rawTeams if
-                                                                               schedu.rawTeams[x].division ==
-                                                                               schedu.rawDivisions[division].fullName],key=lambda x:x.lower())
+        sched_by_div = {x.division.fullName:x for x in schedu.schedules}
+        return render_template("scheduledisplay.html", teamsByDivs={division: sorted(list(sched_by_div[division].teams.keys()),key=lambda x:x.lower())
                                                                     for division in schedu.rawDivisions},
                                divisions=divisions,
-                               scheduleArr=list(map(Schedule.games_in_table_order, schedu.schedules)),
+                               scheduleArr={x.division.fullName:x.games_in_table_order() for x in schedu.schedules},
                                name=request.args["schedule"], enum=enumerate)
 
     master_schedules,r = load_master_schedules()
@@ -902,18 +924,21 @@ def league_settings(user):
 
 
 # teams, divisions, facilities, master_schedules, p = load_pickle_no_compression(connect_redis("redis-10752.c91.us-east-1-3.ec2.cloud.redislabs.com",10752,"wvhnHTE0DLXQqS5avbykMTvc8NZuAlNH","default"))
-# with open("backup.pickle","rb") as f:
-#     teams, divisions, facilities, master_schedules = pickle.load(f)
-# r = connect_redis()
-# for n,g in zip(("team","division","facility","master_schedule"),(teams, divisions, facilities, master_schedules)):
-#     for t in g.values():
-#         add_pickle(r,**{n:t})
+
+def load_backup():
+    with open("backup.pickle","rb") as f:
+        teams, divisions, facilities, master_schedules = pickle.load(f)
+    r = connect_redis()
+    for n,g in zip(("team","division","facility","master_schedule"),(teams, divisions, facilities, master_schedules)):
+        for t in g.values():
+            add_pickle(r,**{n:t})
 
 
 # pickle_to_redis()
-print("cool epic on heroku")
-# with open("backup.pickle","wb") as f:
-#     pickle.dump(load_pickle()[:-1],f)
+# print("cool epic on heroku")
+def make_backup():
+    with open("backup.pickl e","wb") as f:
+        pickle.dump(load_pickle()[:-1],f)
 port = int(os.environ.get('PORT', 5000))  # as per OP comments default is 17995
 if __name__ == "__main__":
 
