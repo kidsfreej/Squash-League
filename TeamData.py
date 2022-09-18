@@ -21,7 +21,7 @@ class Prop:
         if type(other)==str:
             return self.value == other
         if type(other)!=Prop:
-            raise Exception("uh oh")
+            raise Exception("uh oh ",type(other))
         return self.value==other.value
 class Arr:
     def __init__(self,name:str,value):
@@ -112,6 +112,10 @@ class Dates:
                     self.date_ranges.append (( Date("",ranged[0]),Date("", ranged[1])))
                     cur_date =datetime.datetime.strptime(ranged[0].strip(),"%m/%d/%y")
                     end_date = datetime.datetime.strptime(ranged[1].strip(),"%m/%d/%y")
+                    if end_date < cur_date:
+                        self.error=True
+                        self.value = value
+                        return
                     while cur_date!= end_date:
                         self.dates.add(Date("","",cur_date.month, cur_date.day, cur_date.year))
                         cur_date +=datetime.timedelta(days=1)
@@ -190,7 +194,7 @@ def error_messages(prop):
     if type(prop) == Number:
         m += f"Make sure to enter a number (no other symbols). You entered '{prop.value}'."
     elif type(prop) == Date:
-        m += f"Make sure to enter a date (mm/dd/yy). You entered '{prop.value}'"
+        m += f"Make sure to enter a date (mm/dd/yy, mm/dd/yy-mm/dd/yy). You entered '{prop.value}'"
     elif type(prop) == Dates:
         k = 'and'.join([f"'{d}'" for d in prop.value.split()])
         m += f"Make sre you enter common seperated date(s). You entered {k}"
@@ -213,15 +217,17 @@ class Division:
 
                 errors.append(error_messages(prop))
         self.errors = errors
+        if self.start.to_datetime()>self.end.to_datetime():
+            self.errors.append("Make sure that the start date is less than the end date")
 
 class Facility:
-    def __init__(self,fullName,shortName,daysCanHost,datesCantHost,allowedTeams):
+    def __init__(self,fullName,shortName,daysCanHost,datesCantHost,allowedTeams,notes):
         self.fullName = Prop("Full Name",fullName)
         self.shortName =  Prop("Name Abbreviation",shortName)
         self.daysCanHost = Weekdays("Days can Host Matches",daysCanHost)
         self.datesCantHost = Dates("Dates can't host (m/d/yy)",datesCantHost)
         self.allowedTeams :Arr =Arr("Can only host matches for",allowedTeams)
-
+        self.notes = Prop("Notes",notes)
         self.properties = [self.fullName,self.shortName,self.daysCanHost,self.datesCantHost,self.allowedTeams]
         errors = []
         for prop in self.properties:
@@ -230,10 +236,11 @@ class Facility:
 
                 errors.append(error_messages(prop))
         self.errors = errors
-
+    def __hash__(self):
+        return hash("%%".join(map(str,self.properties)))
 class Team:
     def __init__(self, fullName, shortName, division, practiceDays, homeFacility,
-                 alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate):
+                 alternateFacility, noPlayDates, noMatchDays, homeMatchPCT, startDate,notes):
         self.fullName = Prop("Full Name",fullName)
         self.shortName = Prop("Short Name",shortName)
         self.division = Prop("Division",None if division == "$none" else division)
@@ -244,6 +251,7 @@ class Team:
         self.noMatchDays = Weekdays("No Match Days",noMatchDays)
         self.homeMatchPCT = Number("Home Match %",homeMatchPCT)
         self.startDate = Date("Start Date",startDate)
+        self.notes = Prop("Notes",notes)
         self.properties = [self.fullName,self.shortName,self.division,self.practiceDays,self.homeFacility,self.alternateFacility,self.noPlayDates,self.noMatchDays,self.homeMatchPCT,self.startDate]
         errors = []
         for prop in self.properties:
@@ -259,6 +267,8 @@ class Team:
     #     for prop in self.properties:
     #         s+=f"{prop.name}: {prop}<br>"
     #     return s
+    def __hash__(self):
+        return hash("%%".join(map(str,self.properties)))
     def summary(self):
         print(self.shortName, self.division)
 
