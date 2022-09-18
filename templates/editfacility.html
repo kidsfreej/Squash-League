@@ -14,7 +14,7 @@
             text-align: left;
         }
 
-        input {
+        input,textarea,iframe {
           display: inline-block;
           float: left;
         }
@@ -35,6 +35,13 @@
           float: left;
         }
     </style>
+        <script>
+    function onchang(box){
+        fr = document.getElementById("fr")
+        fr.srcdoc=box.value
+    }
+
+    </script>
 </head>
 <body>
 <a href="/">Home</a>
@@ -114,7 +121,19 @@
 </div>
 </span>
     <label></label>
-    <input type="submit">
+            <label></label>  <input type="submit" value="Submit">
+                <label>Notes </label>  <textarea  onchange="onchang(event.target)" name="notes" style="width:500px; height:300px">{{facility.notes}}</textarea>
+        <label>Notes display:</label>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <iframe srcdoc="{{facility.notes}}" id="fr" width="1000" height="500"></iframe>
 
 </form>
 

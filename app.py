@@ -454,7 +454,7 @@ def clone_team(user):
              team.practiceDays.days, team.homeFacility.value,
              team.alternateFacility.value, repr(team.noPlayDates),
              team.noMatchDays.days, str(team.homeMatchPCT.value),
-             repr(team.startDate))
+             repr(team.startDate),team.notes.value)
     if len(t.errors) > 0:
         return render_template("submitnewteam_fail.html", errors=t.errors)
     if t.fullName.value in teams:
@@ -470,7 +470,7 @@ def add_new_team(user):
              Weekdays.parse_weekdays(request.form, "practiceDays"), request.form["homeFacility"],
              request.form["alternativeFacility"], request.form["noPlayDates"],
              Weekdays.parse_weekdays(request.form, "noMatchDays"), request.form["homeMatchPCT"],
-             request.form["startDate"])
+             request.form["startDate"],request.form["notes"])
     if len(t.errors) > 0:
         return render_template("submitnewteam_fail.html", errors=t.errors)
     if t.fullName.value in teams:
@@ -534,14 +534,14 @@ def submit_edit_page(user):
                  Weekdays.parse_weekdays(request.form, "practiceDays"), request.form["homeFacility"],
                  request.form["alternativeFacility"], request.form["noPlayDates"],
                  Weekdays.parse_weekdays(request.form, "noMatchDays"), request.form["homeMatchPCT"],
-                 request.form["startDate"])
+                 request.form["startDate"],request.form["notes"])
 
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
 
-        print(request.form["teamname"])
         delete_pickle(r,team=request.form["teamname"])
-        change_team(request.form["teamname"], t,teams, divisions, facilities, master_schedules, r)
+        if hash(teams[name]) != hash(t):
+            change_team(request.form["teamname"], t,teams, divisions, facilities, master_schedules, r)
         add_pickle(r,team=t)
         return render_template("submiteditteam.html", data=t.properties)
     print(teams)
@@ -639,7 +639,7 @@ def add_new_facility(user):
         else:
             break
     t = Facility(request.form["fullName"], request.form["shortName"],
-                 Weekdays.parse_weekdays(request.form, "daysCanHost"), request.form["datesCantHost"], parsed_teams)
+                 Weekdays.parse_weekdays(request.form, "daysCanHost"), request.form["datesCantHost"], parsed_teams,request.form["notes"])
     if len(t.errors) > 0:
         return render_template("submitnewteam_fail.html", errors=t.errors)
     if t.fullName.value in facilities:
@@ -689,15 +689,15 @@ def submit_edit_facility(user):
             else:
                 break
         t = Facility(request.form["fullName"], request.form["shortName"],
-                     Weekdays.parse_weekdays(request.form, "daysCanHost"), request.form["datesCantHost"], parsed_teams)
+                     Weekdays.parse_weekdays(request.form, "daysCanHost"), request.form["datesCantHost"], parsed_teams,request.form["notes"])
 
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
         facilities.pop(name)
         delete_pickle(r,facility=name)
         facilities[t.fullName.value] = t
-
-        change_facility(name, t,teams, divisions, facilities, master_schedules, r)
+        if hash(t)!=hash(facilities[name]):
+            change_facility(name, t,teams, divisions, facilities, master_schedules, r)
         add_pickle(r,facility=t)
         return render_template("submiteditfacility.html", data=t.properties)
     return f"<a href='/'>Home</a><br><h1>ERROR</h1>{html.escape(name)} is not a facility!!"

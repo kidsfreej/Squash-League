@@ -13,7 +13,7 @@
             width: 500px;
             text-align: left;
         }
-        input {
+        input,textarea,iframe{
           display: inline-block;
           float: left;
         }select {
@@ -21,6 +21,14 @@
           float: left;
         }
     </style>
+    <script>
+        function onchang(box){
+        console.log("chang")
+            fr = document.getElementById("fr")
+            fr.srcdoc=box.value
+        }
+
+    </script>
 </head>
 <body>
 <a href="/">Home</a>
@@ -73,11 +81,24 @@
         <br>
    <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %" value="{{team.homeMatchPCT}}" required><br>
    <label> Start Date (mm/dd/yy) </label> <input type="text" name="startDate" placeholder="Start Date"  value="{{team.startDate}}" required><br>
+        <label></label>  <input type="submit" value="Submit">
+                <label>Notes </label>  <textarea  onchange="onchang(event.target)" name="notes" style="width:500px; height:300px">{{team.notes}}</textarea>
+        <label>Notes display:</label>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <iframe srcdoc="{{team.notes}}" id="fr" width="1000" height="500"></iframe>
     <br>
     <br>
     <br>
-        <input type="hidden" name="teamname" value="{{team.fullName}}">
-    <input type="submit" value="Submit">
+        <input type="hidden" name="teamname" value="{{team.fullName}}" >
+
         </span>
 </form>
 

@@ -13,7 +13,7 @@
             width: 500px;
             text-align: left;
         }
-        input {
+        input,textarea,iframe {
           display: inline-block;
           float: left;
         }
@@ -33,6 +33,13 @@
           vertical-align: middle;
         }
     </style>
+    <script>
+    function onchang(box){
+        fr = document.getElementById("fr")
+        fr.srcdoc=box.value
+    }
+
+    </script>
 </head>
 <body>
 <h1>Add Team</h1>
@@ -85,10 +92,23 @@
         <br>
    <label> Home Match % (100, 90, etc...)</label>  <input type="text" name="homeMatchPCT" placeholder="Home Match %" required><br>
    <label> Start Date (m/d/yy) </label> <input type="text" name="startDate" placeholder="Start Date" required><br>
+        <label></label><input type="submit" value="Submit">
+                <label>Notes </label>  <textarea onchange="onchang(event.target)" name="notes" style="width:500px; height:300px"></textarea>
+        <label>Notes display:</label>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <iframe srcdoc="" id="fr" width="1000" height="500"></iframe>
     <br>
     <br>
     <br>
-    <input type="submit" value="Submit">
+
         </span>
 </form>
 

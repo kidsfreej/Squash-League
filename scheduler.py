@@ -171,7 +171,7 @@ class Schedule:
         self.optimal_distance = self.calculate_optimal_distance()
     def calculate_optimal_distance(self):
         dist = (self.division.end-self.division.start).days.real
-        avg_dist = dist/(len(self.teams)+2)
+        avg_dist = dist/(len(self.teams)-1)
         return avg_dist
     def games_by_combo_gen(self):
         return self.games_by_combo.items()
@@ -288,11 +288,11 @@ class Schedule:
         if not mute:
             print("by days missing:",temp_score)
         score+=temp_score
-
+        optimal_days= max(self.optimal_distance,7)
         temp_score = 0
         for team_name in self.games_by_team:
             for i in range(len(self.games_by_team[team_name])-1):
-                temp_score+=abs((self.games_by_team[team_name][i+1].date-self.games_by_team[team_name][i].date).days.real-7)*20
+                temp_score+=abs((self.games_by_team[team_name][i+1].date-self.games_by_team[team_name][i].date).days.real-optimal_days)*20
         score += temp_score
         if not mute:
             print("by days off:",temp_score)
