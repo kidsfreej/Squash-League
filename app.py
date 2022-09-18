@@ -33,18 +33,27 @@ def connect_redis(url=None,port=None,password=None,username=None):
 @app.context_processor
 def global_vars():
     return dict(urlparse=lambda x: urllib.parse.quote_plus(str(x)))
-
+def load_league_notes(r=None):
+    if r is None:
+        r= connect_redis()
+    v=r.get("league_notes")
+    if v:
+        return zlib.decompress(v).decode()
+    return ""
+def save_league_notes(notes,r=None):
+    if r is None:
+        r = connect_redis()
+    r.set("league_notes",zlib.compress(notes.encode(),1))
 def load_no_play():
     r = connect_redis()
     no_play=  set()
     no_str = ""
-    t = r.get("noplaydates")
-    if t:
-        no_play = pickle.loads(t)
+
     t = r.get("noplaydates_str")
     if t:
         no_str = t.decode()
-    return no_play,no_str
+
+    return Dates("",no_str).to_set(),no_str
 def save_no_play(league_wide_no_play_dates,str_league_wide_no_play_dates):
     r = connect_redis()
     r.set("noplaydates",pickle.dumps(league_wide_no_play_dates))
@@ -389,20 +398,25 @@ def change_facility(old_name, new_facilitiy: Facility,teams, divisions, faciliti
             master_sched.rawFacilities.pop(old_name)
             master_sched.rawFacilities[new_facilitiy.fullName.value] = RawFacility(new_facilitiy)
             schedules_to_change[master_sched.name] = master_sched
-        for schedule in master_sched.schedules:
-            if old_name in schedule.facilities:
-                schedule.facilities.pop(old_name)
-                schedule.facilities[new_facilitiy.fullName.value] = RawFacility(new_facilitiy)
+            for schedule in master_sched.schedules:
+                if old_name in schedule.facilities:
+                    schedule.facilities.pop(old_name)
+                    schedule.facilities[new_facilitiy.fullName.value] = RawFacility(new_facilitiy)
 
-            for combo, game in schedule.games_by_combo_gen():
-                if game is None:
-                    continue
-                if game.rfacility.fullName == old_name:
-                    game.rfacility = RawFacility(new_facilitiy)
-            for team in schedule.games_by_team:
-                for game in schedule.games_by_team[team]:
+                for combo, game in schedule.games_by_combo_gen():
+                    if game is None:
+                        continue
                     if game.rfacility.fullName == old_name:
                         game.rfacility = RawFacility(new_facilitiy)
+                for team in schedule.games_by_team:
+                    for game in schedule.games_by_team[team]:
+                        if game.rfacility.fullName == old_name:
+                            game.rfacility = RawFacility(new_facilitiy)
+                for date in schedule.games:
+                    for game in schedule.games[date]:
+                        if game.rfacility.fullName==old_name:
+                            game.rfacility=RawFacility(new_facilitiy)
+
     edit_pickle(r,teams=teams_to_change,master_schedules=schedules_to_change)
 def change_division(old_name, new_division: Division,teams, divisions, facilities, master_schedules, r):
     teams_to_change ={}
@@ -544,7 +558,6 @@ def submit_edit_page(user):
             change_team(request.form["teamname"], t,teams, divisions, facilities, master_schedules, r)
         add_pickle(r,team=t)
         return render_template("submiteditteam.html", data=t.properties)
-    print(teams)
     return "Ok this should neve everr happen. "
 
 
@@ -693,10 +706,11 @@ def submit_edit_facility(user):
 
         if len(t.errors) > 0:
             return render_template("submitnewteam_fail.html", errors=t.errors)
-        facilities.pop(name)
+
         delete_pickle(r,facility=name)
-        facilities[t.fullName.value] = t
         if hash(t)!=hash(facilities[name]):
+            facilities.pop(name)
+            facilities[t.fullName.value] = t
             change_facility(name, t,teams, divisions, facilities, master_schedules, r)
         add_pickle(r,facility=t)
         return render_template("submiteditfacility.html", data=t.properties)
@@ -912,13 +926,15 @@ def cancel_updater(user):
 def league_settings(user):
     league_wide_no_play_dates,str_league_wide_no_play_dates = load_no_play()
     if request.method == "GET":
-        return render_template("leaguesettings.html", noPlayDates=str_league_wide_no_play_dates)
+        notes= load_league_notes()
+        return render_template("leaguesettings.html", noPlayDates=str_league_wide_no_play_dates,notes=notes)
     parsed = Dates("League Wide No Play Dates", request.form["noPlayDates"])
     if parsed.error:
         return render_template("submitnewteam_fail.html", errors=[error_messages(parsed)])
     str_league_wide_no_play_dates = parsed.__repr__()
     league_wide_no_play_dates = parsed.to_set()
     save_no_play(league_wide_no_play_dates,str_league_wide_no_play_dates)
+    save_league_notes(request.form["notes"])
     return render_template("leaguesettingssuccess.html", noPlayDates=str_league_wide_no_play_dates)
 
 
@@ -937,7 +953,7 @@ def load_backup():
 # pickle_to_redis()
 # print("cool epic on heroku")
 def make_backup():
-    with open("backup.pickl e","wb") as f:
+    with open("backup.pickle","wb") as f:
         pickle.dump(load_pickle()[:-1],f)
 port = int(os.environ.get('PORT', 5000))  # as per OP comments default is 17995
 if __name__ == "__main__":

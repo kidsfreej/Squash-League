@@ -21,13 +21,28 @@
           float: left;
         }
     </style>
+            <script>
+    function onchang(box){
+        fr = document.getElementById("fr")
+        fr.srcdoc=box.value
+    }
+
+    </script>
 </head>
 <body>
 <a href="/">Home</a><br>
 <h1>LEAGUE SETTINGS</h1>
     <form method="post" action="/leaguesettings">
         <label>League wide no play dates (mm/dd/yy,mm/dd/yy-mm/dd/yy...etc)</label><textarea name="noPlayDates">{{noPlayDates}}</textarea><br><br><br>
-        <input type="submit">
+                        <label></label>  <input type="submit" value="Submit">
+                <label>Notes </label>  <textarea  onchange="onchang(event.target)" name="notes" style="width:500px; height:300px">{{notes}}</textarea>
+        <label>Notes display:</label>
+        <br>
+        <br>
+
+
+        <iframe srcdoc="{{notes}}" id="fr" width="1000" height="500"></iframe>
+
     </form>
 
 </body>

@@ -540,6 +540,7 @@ class Schedule:
 
         for i in range(iterations):
             MasterSchedule.iteration_counter+=1
+            print("iter")
             if i%500==0:
                 try:
                     save_scheduling_data(iteration_counter=MasterSchedule.iteration_counter)
